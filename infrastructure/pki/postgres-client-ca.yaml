@@ -1,0 +1,26 @@
+# CA for client authentication
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: postgres-client-ca
+  namespace: cert-manager
+spec:
+  isCA: true
+  commonName: teleport-postgres-client-ca
+  secretName: postgres-client-ca-key-pair
+  duration: 87600h # 10y
+  renewBefore: 8760h # 1y
+  privateKey:
+    algorithm: RSA
+    size: 4096
+  issuerRef:
+    name: selfsigned-bootstrap
+    kind: ClusterIssuer
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: postgres-client-ca-issuer
+spec:
+  ca:
+    secretName: postgres-client-ca-key-pair

@@ -1,0 +1,19 @@
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+tfplan
+plan.txt
+crash.log
+
+# Secrets/Credentials
+license.pem
+*.key
+*.pem
+kubeconfig*
+
+#macOS
+.DS_Store

@@ -1,0 +1,40 @@
+# Flux tells you when a merge failed to reconcile. This is why you do not need
+# GitHub Actions for deploy notifications.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: slack-webhook
+  namespace: flux-system
+type: Opaque
+stringData:
+  # Populated by ExternalSecrets in a real setup -- placeholder left empty so a
+  # bad webhook does not silently swallow alerts.
+  address: ""
+---
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Provider
+metadata:
+  name: slack
+  namespace: flux-system
+spec:
+  type: slack
+  channel: teleport-deploys
+  secretRef:
+    name: slack-webhook
+---
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Alert
+metadata:
+  name: teleport
+  namespace: flux-system
+spec:
+  providerRef:
+    name: slack
+  eventSeverity: error
+  eventSources:
+    - kind: Kustomization
+      name: "*"
+    - kind: HelmRelease
+      name: "*"
+
+# TODO: remove for now!

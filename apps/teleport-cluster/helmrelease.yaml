@@ -1,0 +1,69 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: teleport-cluster
+  namespace: teleport
+spec:
+  interval: 1h
+  releaseName: teleport
+  chart:
+    spec:
+      chart: teleport-cluster
+      version: "${TELEPORT_VERSION}"
+      sourceRef:
+        kind: HelmRepository
+        name: teleport
+        namespace: flux-system
+  install:
+    crds: Create # include Operator CRDs
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+      strategy: rollback
+  # catches Deployment edits that occur via kubectl rather than Git
+  driftDetection:
+    mode: enabled
+
+  valuesFrom:
+    - kind: ConfigMap
+      name: teleport-cluster-values
+      valuesKey: values.yaml
+
+  # TODO: reevaluate whether this layering of inline values with valuesFrom is beneficial
+  values:
+    teleportVersionOverride: "${TELEPORT_VERSION}"
+    
+    licenseSecretName: license
+
+    highAvailability:
+      certManager:
+        issuerKind: ClusterIssuer
+      podDisruptionBudget:
+        enabled: true
+        minAvailable: 1
+
+    annotations:
+      deployment:
+        secret.reloader.stakater.com/reload: "teleport-backend-client-tls"
+        configmap.reloader.stakater.com/reload: "teleport-postgres-server-ca"
+      serviceAccount:
+        eks.amazonaws.com/role-arn: ${TELEPORT_AUTH_ROLE_ARN}
+
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        memory: 2Gi
+
+    operator:
+      enabled: true
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          memory: 256Mi

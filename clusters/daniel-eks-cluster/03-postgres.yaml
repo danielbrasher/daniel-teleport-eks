@@ -1,0 +1,25 @@
+# Teleport's backend database.
+#
+# Optional: if you manage this StatefulSet elsewhere, delete this file and
+# infrastructure/postgres/. But note what is stored in there -- Teleport's host
+# CA and user CA private keys, every role, every user. Losing this volume is not
+# "restore the database", it is "every agent and every client must re-enroll
+# against a new cluster identity". It deserves to be in Git and it deserves
+# backups (see docs/01-bootstrap.md).
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: postgres
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: infra-pki
+  interval: 30m
+  retryInterval: 1m
+  timeout: 10m
+  path: ./infrastructure/postgres
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system

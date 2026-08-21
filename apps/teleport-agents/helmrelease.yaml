@@ -1,0 +1,44 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: teleport-discovery
+  namespace: teleport
+spec:
+  interval: 1h
+  releaseName: teleport-discovery
+  chart:
+    spec:
+      chart: teleport-kube-agent
+      # pin agent to cluster version
+      version: "${TELEPORT_VERSION}"
+      sourceRef:
+        kind: HelmRepository
+        name: teleport
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+      strategy: rollback
+  driftDetection:
+    mode: enabled
+
+  valuesFrom:
+    - kind: ConfigMap
+      name: teleport-agent-values
+      valuesKey: values.yaml
+
+  values:
+    teleportVersionOverride: "${TELEPORT_VERSION}" # decouple Teleport version from Helm chart version if different interpolated var interpolated (flexibility)
+    annotations:
+      serviceAccount:
+        eks.amazonaws.com/role-arn: ${TELEPORT_DISCOVERY_ROLE_ARN}
+# TODO: check below!
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 512Mi

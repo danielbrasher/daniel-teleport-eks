@@ -1,0 +1,57 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned-bootstrap
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: postgres-ca
+  namespace: cert-manager
+spec:
+  isCA: true
+  commonName: teleport-postgres-ca
+  secretName: postgres-ca-key-pair
+  duration: 87600h # 10y
+  privateKey:
+    algorithm: RSA
+    size: 4096
+  issuerRef:
+    name: selfsigned-bootstrap
+    kind: ClusterIssuer
+---
+# Note: ClusterIssuer resolves ca.secretName in the cert-manager cluster resource namespace (cert-manager in this case)
+# bc postgres-ca is in that namespace, certs in both teleport and teleport-databases namespaces can use this issuer
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: postgres-ca-issuer
+spec:
+  ca:
+    secretName: postgres-ca-key-pair
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: teleport-postgres-server
+  namespace: teleport-databases
+spec:
+  secretName: teleport-postgres-server-tls
+  duration: 2160h # 90d
+  renewBefore: 720h # 30d
+  commonName: teleport-postgres.teleport-databases.svc.cluster.local
+  dnsNames:
+    - teleport-postgres.teleport-databases.svc.cluster.local
+  usages:
+    - server auth
+    - digital signature
+    - key encipherment
+  privateKey:
+    algorithm: RSA
+    size: 2048
+    rotationPolicy: Always
+  issuerRef:
+    name: postgres-ca-issuer
+    kind: ClusterIssuer

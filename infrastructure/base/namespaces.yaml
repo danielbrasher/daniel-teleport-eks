@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: teleport
+  labels:
+    pod-security.kubernetes.io/enforce: baseline
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: teleport-databases
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: external-secrets
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cert-manager
+---
+# for demoing okta-kube-access in conjunction with Team A's RoleBinding
+# TODO: put something interesting in the namespace (e.g. actual resources)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: team-a

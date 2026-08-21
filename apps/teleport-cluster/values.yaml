@@ -1,0 +1,58 @@
+chartMode: standalone
+enterprise: true
+clusterName: teleport-eks.dbteleport.com
+proxyListenerMode: multiplex
+
+highAvailability:
+  certManager:
+    enabled: true
+    issuerName: letsencrypt-production
+  replicaCount: 2
+
+podSecurityPolicy:
+  enabled: false
+
+serviceAccount:
+  create: true
+  name: teleport
+
+persistence:
+  enabled: false
+
+auth:
+  teleportConfig:
+    teleport:
+      storage:
+        type: postgresql
+        conn_string: postgresql://teleport@teleport-postgres.teleport-databases.svc.cluster.local:5432/teleport_backend?sslmode=verify-full&sslrootcert=/etc/teleport-backend-tls/ca.crt&sslcert=/etc/teleport-backend-tls/tls.crt&sslkey=/etc/teleport-backend-tls/tls.key&pool_max_conns=20
+        audit_events_uri:
+        - postgresql://teleport@teleport-postgres.teleport-databases.svc.cluster.local:5432/teleport_audit?sslmode=verify-full&sslrootcert=/etc/teleport-backend-tls/ca.crt&sslcert=/etc/teleport-backend-tls/tls.crt&sslkey=/etc/teleport-backend-tls/tls.key
+        audit_sessions_uri: s3://daniel-teleport-sessions-eks?region=us-west-1
+    auth_service:
+      authentication:
+        stable_unix_user_config: # clusterwide UID assignment (stable UIDs for host user creation)
+          enabled: true
+          first_uid: 90000
+          last_uid: 95000
+
+extraVolumes:
+- name: backend-tls
+  projected:
+    defaultMode: 384
+    sources:
+    - secret:
+        name: teleport-backend-client-tls
+        items:
+        - {key: tls.crt, path: tls.crt}
+        - {key: tls.key, path: tls.key}
+    - configMap:
+        name: teleport-postgres-server-ca
+        items:
+        - {key: ca.crt, path: ca.crt}
+extraVolumeMounts:
+- name: backend-tls
+  mountPath: /etc/teleport-backend-tls
+  readOnly: true
+
+operator:
+  enabled: true

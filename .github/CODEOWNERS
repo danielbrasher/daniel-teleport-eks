@@ -1,0 +1,10 @@
+# TODO: request PR review from contributors/teams responsible for discrete parts of the repo
+# see: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+# commented out for now to avoid additional complications in initial testing
+/.github/CODEOWNERS @danielbrasher
+# /teleport-resources/                @dancorp/security-engs @dancorp/platform-engs
+# /k8s-rbac/                          @dancorp/security-engs @dancorp/platform-engs
+# /terraform/iam-irsa.tf              @dancorp/security-engs
+# /terraform/github-oidc.tf           @dancorp/security-engs
+# /infrastructure/config/             @dancorp/platform-engs
+# /apps/                              @dancorp/platform-engs

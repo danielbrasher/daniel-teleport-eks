@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: teleport-postgres-config
+  namespace: teleport-databases
+data:
+  postgresql.conf: |
+    data_directory = '/var/lib/postgresql/data/pgdata'
+    hba_file       = '/etc/postgresql/pg_hba.conf'
+    listen_addresses = '*'
+    port = 5432
+
+    ssl = on
+    ssl_cert_file = '/etc/postgres-tls/tls.crt'
+    ssl_key_file  = '/etc/postgres-tls/tls.key'
+    ssl_ca_file   = '/etc/postgres-tls/db-client.cas'
+    ssl_min_protocol_version = 'TLSv1.2'
+
+    # Connection budget. Two auth replicas x two pools (backend + audit) x
+    # pool_max_conns=20 is 80 connections at steady state, against a default
+    # max_connections of 100. That leaves ~20 for everything else -- your own
+    # psql, the readiness probe, a rolling restart where old and new pods
+    # overlap. A restart is exactly when you do not want to hit the ceiling.
+    #
+    # Either raise this or lower pool_max_conns in the conn_string. Raising is
+    # cheaper here: each backend is a process, but they are mostly idle.
+    max_connections = 200
+
+    wal_level = logical
+    max_wal_senders = 10
+    max_replication_slots = 10
+
+    # Teleport's backend is chatty and small-transaction heavy. Log slow
+    # statements so a degrading backend shows up before it shows up as Teleport
+    # being slow to log people in.
+    log_min_duration_statement = 1000
+    log_connections = on
+    log_disconnections = on
+
+  pg_hba.conf: |
+    # Local socket only, for maintenance via `kubectl exec`. Not reachable over
+    # the network.
+    local     all   postgres                trust
+
+    # Teleport, client-cert auth. `cert` implies clientcert=verify-full, which
+    # matches the certificate CN against the Postgres role name -- so this only
+    # admits a cert with CN=teleport, signed by a CA in db-client.cas.
+    #
+    # This replaces `hostssl all all 0.0.0.0/0 cert`. That rule admitted ANY
+    # user in ANY database, including postgres, to anyone holding a cert from
+    # the trusted client CA. Combined with a ClusterIssuer usable from any
+    # namespace, it was a short path to superuser on the Teleport backend --
+    # which stores Teleport's own CA keys.
+    hostssl   teleport_backend   teleport   0.0.0.0/0   cert
+    hostssl   teleport_backend   teleport   ::/0        cert
+    hostssl   teleport_audit     teleport   0.0.0.0/0   cert
+    hostssl   teleport_audit     teleport   ::/0        cert
+
+    # Anything not matched above is rejected. There is deliberately no `host`
+    # (non-TLS) rule, so plaintext TCP cannot authenticate at all.

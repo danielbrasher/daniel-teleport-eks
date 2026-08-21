@@ -1,0 +1,24 @@
+# Auth, Proxy, Kubernetes Operator + CRDs
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: teleport-cluster
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: infra-config
+    - name: infra-pki
+    - name: postgres
+  interval: 30m
+  retryInterval: 2m
+  timeout: 20m
+  path: ./apps/teleport-cluster
+  prune: true
+  wait: true # make sure operator is up before later phases need Teleport CRs
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  postBuild:
+    substituteFrom:
+      - kind: ConfigMap
+        name: cluster-vars

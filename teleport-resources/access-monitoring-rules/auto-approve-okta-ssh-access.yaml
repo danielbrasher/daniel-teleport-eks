@@ -1,0 +1,15 @@
+apiVersion: resources.teleport.dev/v1
+kind: TeleportAccessMonitoringRuleV1
+metadata:
+  name: auto-approve-okta-ssh-access
+  namespace: teleport
+spec:
+  subjects:
+    - access_request
+  # must ONLY contain a request for okta-ssh-access role - bundling with any other role request(s) will not autoapprove
+  condition: |-
+    set("okta-ssh-access").contains_all(access_request.spec.roles)
+  desired_state: reviewed
+  automatic_review:
+    integration: builtin
+    decision: APPROVED

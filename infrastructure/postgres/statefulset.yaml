@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: teleport-postgres
+  namespace: teleport-databases
+  annotations:
+    secret.reloader.stakater.com/reload: "teleport-postgres-server-tls"
+    configmap.reloader.stakater.com/reload: "teleport-postgres-config,teleport-db-client-ca"
+spec:
+  serviceName: teleport-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: teleport-postgres
+  template:
+    metadata:
+      labels:
+        app: teleport-postgres
+    spec:
+      securityContext:
+        fsGroup: 999
+        fsGroupChangePolicy: OnRootMismatch
+      containers:
+        - name: postgres
+          image: 278576220453.dkr.ecr.us-west-1.amazonaws.com/daniel-postgres-wal2json:18
+          args: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+          ports:
+            - containerPort: 5432
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+            # applies to initdb on first boot only - pg_hba applies on subsequent boots
+            - name: POSTGRES_HOST_AUTH_METHOD
+              value: trust
+            - name: POSTGRES_USER
+              value: postgres
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: config
+              mountPath: /etc/postgresql
+              readOnly: true
+            - name: tls
+              mountPath: /etc/postgres-tls
+              readOnly: true
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres", "-h", "127.0.0.1"]
+            initialDelaySeconds: 10
+          # TODO: revisit
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres", "-h", "127.0.0.1"]
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 5
+          #
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              memory: 2Gi
+      volumes:
+        - name: config
+          configMap:
+            name: teleport-postgres-config
+            defaultMode: 0644
+        - name: tls
+          projected:
+            defaultMode: 0640
+            sources:
+              - secret:
+                  name: teleport-postgres-server-tls
+                  items:
+                    - {key: tls.crt, path: tls.crt}
+                    - {key: tls.key, path: tls.key}
+              - configMap:
+                  name: teleport-db-client-ca
+                  items:
+                    - {key: db-client.cas, path: db-client.cas}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: gp3
+        resources:
+          requests:
+            storage: 50Gi

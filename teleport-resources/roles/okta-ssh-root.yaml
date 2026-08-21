@@ -1,0 +1,18 @@
+apiVersion: resources.teleport.dev/v1
+kind: TeleportRoleV8
+metadata:
+  name: okta-ssh-root
+  namespace: teleport
+spec:
+  allow:
+    logins: ["{{external.posixUsername}}"]
+    node_labels:
+      aws/env: ["dev"]
+    host_sudoers:
+      - "ALL=(ALL) NOPASSWD: ALL" # entry prefixed with posixUsername, allows passwordless sudo
+  deny:
+    logins: ["root"]
+  options:
+    create_host_user_mode: keep
+    create_host_user_default_shell: /bin/bash
+    max_session_ttl: 4h

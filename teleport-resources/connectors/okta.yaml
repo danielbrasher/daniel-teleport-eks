@@ -1,0 +1,18 @@
+apiVersion: resources.teleport.dev/v2
+kind: TeleportSAMLConnector
+metadata:
+  name: okta
+  namespace: teleport
+spec:
+  display: Okta
+  acs: https://teleport-eks.dbteleport.com/v1/webapi/saml/acs/okta
+  audience: https://teleport-eks.dbteleport.com/v1/webapi/saml/acs/okta
+  service_provider_issuer: https://teleport-eks.dbteleport.com/v1/webapi/saml/acs/okta
+  entity_descriptor_url: https://integrator-8530257.okta.com/app/exk15zcf3srEYOyYl698/sso/saml/metadata
+  allow_idp_initiated: false
+
+  # need one mapping minimum
+  attributes_to_roles:
+    - name: groups
+      value: teleport-users
+      roles: ["okta-base-requester"]

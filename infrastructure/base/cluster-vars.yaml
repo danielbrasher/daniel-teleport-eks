@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-vars
+  namespace: flux-system
+data:
+  AWS_REGION: "us-west-1"
+  AWS_ACCOUNT_ID: "278576220453"
+  EKS_CLUSTER_NAME: "daniel-eks-cluster"
+  TELEPORT_CLUSTER_NAME: "teleport-eks.dbteleport.com"
+
+  # pin teleport-agents and teleport-cluster chart version (+binary version as currently configured)
+  TELEPORT_VERSION: "18.10.0"
+
+  TELEPORT_AUTH_ROLE_ARN: "arn:aws:iam::278576220453:role/daniel-teleport-auth"
+  TELEPORT_DISCOVERY_ROLE_ARN: "arn:aws:iam::278576220453:role/daniel-teleport-discovery"
+  EXTERNAL_SECRETS_ROLE_ARN: "arn:aws:iam::278576220453:role/daniel-teleport-external-secrets"
+  TELEPORT_EC2_NODE_ROLE: "daniel-teleport-ec2-node"
+
+  SECRET_PREFIX: "daniel-teleport"
+  ACME_EMAIL: "daniel@dbteleport.com"

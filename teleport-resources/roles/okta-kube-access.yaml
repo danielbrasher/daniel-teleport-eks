@@ -1,0 +1,19 @@
+apiVersion: resources.teleport.dev/v1
+kind: TeleportRoleV8
+metadata:
+  name: okta-kube-access
+  namespace: teleport
+spec:
+  allow:
+    kubernetes_labels:
+      env: ["dev"]
+    kubernetes_groups: ["k8s-dev-{{external.team}}"]
+    kubernetes_users: ["{{external.posixUsername}}"]
+    kubernetes_resources:
+      - kind: "*"
+        api_group: "*"
+        namespace: "{{external.team}}"
+        name: "*"
+        verbs: ["*"]
+  options:
+    max_session_ttl: 8h

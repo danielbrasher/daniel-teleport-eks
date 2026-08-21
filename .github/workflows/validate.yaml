@@ -1,0 +1,89 @@
+# Pre-merge validation
+name: validate
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  manifests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: fluxcd/flux2/action@main
+        with:
+          version: latest
+
+      - name: Install tooling
+        run: |
+          curl -sSL -o /tmp/kubeconform.tar.gz \
+            https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz
+          tar -xzf /tmp/kubeconform.tar.gz -C /usr/local/bin kubeconform
+          curl -sSL https://get.helm.sh/helm-v3.16.2-linux-amd64.tar.gz | tar -xz -C /tmp
+          sudo mv /tmp/linux-amd64/helm /usr/local/bin/helm
+
+      # Allow kubeconform to validate Teleport manifests against their schemas
+      - name: Generate Teleport CRD schemas
+        run: ./scripts/gen-crd-schemas.sh
+
+      - name: kustomize build every path
+        run: |
+          set -euo pipefail
+          for d in infrastructure/base infrastructure/controllers infrastructure/config \
+                   infrastructure/pki infrastructure/postgres \
+                   apps/teleport-cluster apps/teleport-agents teleport-resources k8s-rbac; do
+            echo "::group::$d"
+            kustomize build "$d" > "/tmp/$(echo "$d" | tr / -).yaml"
+            echo "::endgroup::"
+          done
+
+      - name: kubeconform
+        run: |
+          set -euo pipefail
+          for f in /tmp/*.yaml; do
+            kubeconform \
+              -strict \
+              -summary \
+              -schema-location default \
+              -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+              -schema-location '/tmp/crd-schemas/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+              "$f"
+          done
+
+      - name: Validate Flux Kustomizations
+        run: |
+          cat clusters/daniel-eks-cluster/*.yaml | kubeconform \
+            -strict -summary -schema-location default \
+            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+            -ignore-missing-schemas
+
+      # Render Helm charts with values so bad keys/values fail here rather than creating a stuck HelmRelease
+      - name: helm template
+        run: |
+          helm repo add teleport https://charts.releases.teleport.dev
+          VER=$(grep 'TELEPORT_VERSION:' infrastructure/base/cluster-vars.yaml | tr -d '" ' | cut -d: -f2)
+          helm template teleport teleport/teleport-cluster --version "$VER" \
+            -f apps/teleport-cluster/values.yaml > /dev/null
+          helm template teleport-discovery teleport/teleport-kube-agent --version "$VER" \
+            -f apps/teleport-agents/values.yaml > /dev/null
+
+# Note for future: could do policy-as-code guardrails in Rego language (built on Open Policy Agent)
+# for instance, could flag if okta-ssh-root role were added to the autoapprove access monitoring rule currently granting access to the non-sudo ssh role
+# to ensure autoapproved root access doesn't happen
+# given we're already working off PRs and human approvals, probably overkill here
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

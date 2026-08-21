@@ -1,0 +1,36 @@
+roles: discovery
+proxyAddr: teleport-eks.dbteleport.com:443
+kubeClusterName: daniel-eks-cluster
+enterprise: true
+
+joinParams:
+  method: iam
+  tokenName: aws-discovery-iam-token
+
+serviceAccount:
+  create: true
+  name: teleport-kube-agent
+annotations:
+  serviceAccount:
+    eks.amazonaws.com/role-arn: arn:aws:iam::278576220453:role/daniel-teleport-discovery
+
+kubernetesDiscovery: [] # not auto-discovering Kubernetes Services as apps # TODO: revisit for demo
+
+teleportConfig:
+  discovery_service:
+    enabled: true
+    discovery_group: daniel-aws-us-west-1-ec2-all
+    aws:
+      - types: ["ec2"]
+        regions: ["us-west-1"]
+        tags:
+          "daniel-teleport-discoverable": "true"
+        install:
+          join_params:
+            token_name: aws-discovery-iam-token
+            method: iam
+        ssm:
+          document_name: "Daniel-TeleportDiscoveryInstaller"
+
+log:
+  level: DEBUG # TODO: change once in prod and running smoothly

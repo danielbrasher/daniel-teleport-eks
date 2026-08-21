@@ -1,0 +1,32 @@
+# Teleport's client cert for the Postgres backend.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: teleport-backend-client
+  namespace: teleport
+spec:
+  secretName: teleport-backend-client-tls
+  commonName: teleport
+
+  usages:
+    - client auth
+    - digital signature
+    - key encipherment
+
+  duration: 2160h # 90d
+  renewBefore: 720h # 30d
+
+  privateKey:
+    algorithm: RSA
+    size: 2048
+    rotationPolicy: Always
+
+  # client CA - not reusing the server CA bc doing so risks turning any ns in the cluster into a path to Postgres superuser # TODO: grok this more clearly
+  issuerRef:
+    name: postgres-client-ca-issuer
+    kind: ClusterIssuer
+
+  # enable stakater/reloader to auto restart the auth pods after cert renews
+  secretTemplate:
+    labels:
+      app.kubernetes.io/part-of: teleport
