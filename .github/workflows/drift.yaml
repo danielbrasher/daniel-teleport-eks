@@ -3,7 +3,7 @@ name: terraform-drift
 
 on:
   schedule:
-    - cron: '0 9 * * 1-7' # run at 9 AM every day of the week
+    - cron: '0 9 * * *' # run at 9 AM every day of the week
   workflow_dispatch:
 
 permissions:
