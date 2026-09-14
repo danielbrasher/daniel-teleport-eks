@@ -57,8 +57,10 @@ spec:
         cpu: 500m
         memory: 1Gi
       limits:
+        # no CPU limits, see: https://github.com/gravitational/teleport/pull/36251
         memory: 2Gi
 
+    # set based on the assumption this is a small to medium sized environment
     operator:
       enabled: true
       resources:

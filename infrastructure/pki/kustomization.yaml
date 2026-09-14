@@ -4,5 +4,5 @@ resources:
   - postgres-ca.yaml
   - postgres-client-ca.yaml
   - teleport-backend-client.yaml
-  - db-client-ca-bundle.yaml
-  - server-ca-bundle.yaml
+  - db-client-ca-clusterbundle.yaml
+  - server-ca-clusterbundle.yaml

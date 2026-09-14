@@ -14,6 +14,7 @@ license.pem
 *.key
 *.pem
 kubeconfig*
+private/
 
 #macOS
 .DS_Store

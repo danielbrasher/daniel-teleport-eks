@@ -16,6 +16,11 @@ data:
   TELEPORT_DISCOVERY_ROLE_ARN: "arn:aws:iam::278576220453:role/daniel-teleport-discovery"
   EXTERNAL_SECRETS_ROLE_ARN: "arn:aws:iam::278576220453:role/daniel-teleport-external-secrets"
   TELEPORT_EC2_NODE_ROLE: "daniel-teleport-ec2-node"
+  CERT_MANAGER_ROLE_ARN: "arn:aws:iam::278576220453:role/daniel-teleport-cert-manager"
 
   SECRET_PREFIX: "daniel-teleport"
   ACME_EMAIL: "daniel@dbteleport.com"
+  DNS_ZONE_NAME: "dbteleport.com"
+
+  # repo Flux is bootstrapped from, notification Provider posts commit statuses here
+  GITHUB_REPO_URL: "https://github.com/danielbrasher/daniel-teleport-eks"

@@ -5,6 +5,12 @@ data "aws_eks_cluster" "this" {
   name = var.eks_cluster_name
 }
 
+# zone cert-manager writes _acme-challenge records into; also scopes its IAM policy
+data "aws_route53_zone" "this" {
+  name         = var.dns_zone_name
+  private_zone = false
+}
+
 # read and attach a least-privilege policy to pre-existing S3 bucket
 data "aws_s3_bucket" "sessions" {
   bucket = var.session_recording_bucket

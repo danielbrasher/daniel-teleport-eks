@@ -22,8 +22,9 @@ spec:
     name: selfsigned-bootstrap
     kind: ClusterIssuer
 ---
-# Note: ClusterIssuer resolves ca.secretName in the cert-manager cluster resource namespace (cert-manager in this case)
-# bc postgres-ca is in that namespace, certs in both teleport and teleport-databases namespaces can use this issuer
+# Note: ClusterIssuer resolves ca.secretName in the cert-manager cluster resource namespace
+# ('cert-manager' in this case)
+# because postgres-ca is in that namespace, certs in both teleport and teleport-databases namespaces can use this issuer
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:

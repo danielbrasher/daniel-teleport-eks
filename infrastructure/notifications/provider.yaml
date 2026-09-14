@@ -1,0 +1,16 @@
+# posts commit status back to repo Flux reconciled from
+# failed reconcile will show a red cross on the commit in GitHub
+# authenticating as a GitHub App instead of via a personal access token (permissions are repo-scoped, controller creates short-lived installation token on each request, nothing tied to an individual's account)
+# app only needs to be able to read and write to Commit statuses
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Provider
+metadata:
+  name: github-status
+  namespace: flux-system
+spec:
+  type: github
+  address: ${GITHUB_REPO_URL}
+  secretRef:
+    name: flux-github-app
+  # give something readily intelligible - i.e. "flux/infra-controllers" instead of "kustomization/<name>/<uid-prefix>"
+  commitStatusExpr: "('flux/' + event.involvedObject.name).lowerAscii()"

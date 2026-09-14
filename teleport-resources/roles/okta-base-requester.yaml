@@ -10,9 +10,6 @@ spec:
         - okta-kube-access
         - okta-ssh-access
         - okta-ssh-root
-      # requester-role added to to prove role membership when evaluating okta-ssh-access request autoapproval (via auto-approve-okta-ssh-access)
-      annotations:
-        requester-role: ['okta-base-requester']
       # reason set to ensure audit event recorded for auto-approval
       reason:
         mode: "required"

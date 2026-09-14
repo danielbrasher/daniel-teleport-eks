@@ -1,10 +1,4 @@
 # Postgres PKI + Teleport's client certificate.
-#
-# Separate from infra-config because it must be Ready before the auth pods
-# start, and because the healthChecks below are the whole point: `wait: true`
-# plus a Certificate health check means Flux blocks teleport-cluster until
-# cert-manager has actually issued the client cert. No CrashLoop while the
-# Secret does not exist yet.
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:

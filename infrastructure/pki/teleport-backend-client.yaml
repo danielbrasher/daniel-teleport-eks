@@ -21,7 +21,8 @@ spec:
     size: 2048
     rotationPolicy: Always
 
-  # client CA - not reusing the server CA bc doing so risks turning any ns in the cluster into a path to Postgres superuser # TODO: grok this more clearly
+  # client CA
+  # just reusing the server CA would risk turning any namespace in the cluster into a path to Postgres superuser, # TODO: refine/improve note here
   issuerRef:
     name: postgres-client-ca-issuer
     kind: ClusterIssuer

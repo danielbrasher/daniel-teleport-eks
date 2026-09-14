@@ -18,9 +18,55 @@ resource "aws_secretsmanager_secret" "license" {
 resource "aws_secretsmanager_secret_version" "license_placeholder" {
   secret_id = aws_secretsmanager_secret.license.id
 
-  # JSON with a single license.pem key; ESO maps it into the Secret.
   secret_string = jsonencode({
-    "license.pem" = "REPLACE_ME"
+    "license.pem" = "REPLACE_ME" # replaced out of band
+  })
+
+  lifecycle {
+    ignore_changes = [secret_string]
+  }
+}
+
+# GitHub App credentials for the Flux notification Provider (commit statuses)
+# actual app name is "flux-daniel-teleport-github-app"
+resource "aws_secretsmanager_secret" "flux_github_app" {
+  name        = "${var.name_prefix}/flux-github-app"
+  description = "GitHub App creds used by notification-controller to post commit statuses"
+  kms_key_id  = aws_kms_key.teleport_secrets.arn
+}
+
+resource "aws_secretsmanager_secret_version" "flux_github_app_placeholder" {
+  secret_id = aws_secretsmanager_secret.flux_github_app.id
+
+  # replaced out of band
+  secret_string = jsonencode({
+    githubAppID             = "REPLACE_ME"
+    githubAppInstallationID = "REPLACE_ME"
+    githubAppPrivateKey     = "REPLACE_ME"
+  })
+
+  lifecycle {
+    ignore_changes = [secret_string]
+  }
+}
+
+# GitHub App credentials for the githubdispatch notification Provider (opens issues+comments on issues for subsequent occurrences)
+# separate GitHub app, separate permissions
+# actual app name is "flux-daniel-teleport-gh-dsptch-app" (limit of 34 characters)
+resource "aws_secretsmanager_secret" "flux_github_dispatch_app" {
+  name        = "${var.name_prefix}/flux-github-dispatch-app"
+  description = "GitHub App creds used by notification-controller to send repository_dispatch events"
+  kms_key_id  = aws_kms_key.teleport_secrets.arn
+}
+
+resource "aws_secretsmanager_secret_version" "flux_github_dispatch_app_placeholder" {
+  secret_id = aws_secretsmanager_secret.flux_github_dispatch_app.id
+
+  # replaced out of band
+  secret_string = jsonencode({
+    githubAppID             = "REPLACE_ME"
+    githubAppInstallationID = "REPLACE_ME"
+    githubAppPrivateKey     = "REPLACE_ME"
   })
 
   lifecycle {

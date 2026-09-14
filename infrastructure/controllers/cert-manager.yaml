@@ -20,7 +20,13 @@ spec:
   values:
     crds:
       enabled: true
-    # for solving DNS-01 via Route53 with IRSA # TODO
+    # for solving DNS-01 via Route53 with IRSA (terraform/iam-irsa.tf)
     serviceAccount:
+      create: true
+      name: cert-manager
       annotations:
-        eks.amazonaws.com/role-arn: ${CERT_MANAGER_ROLE_ARN:=} # TODO
+        eks.amazonaws.com/role-arn: ${CERT_MANAGER_ROLE_ARN}
+    securityContext:
+      # IRSA projects web identity token as root:1001 0440
+      # without specifying 'fsGroup' below, controller runs as a different group, can't read the token, and Route53 solver fails with AccessDenied at challenge and certs never issue
+      fsGroup: 1001

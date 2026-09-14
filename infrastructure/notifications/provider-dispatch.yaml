@@ -1,0 +1,14 @@
+# forwards HelmRelease failures as repository_dispatch events to GitHub, triggering .github/workflows/flux-helmrelease-failure.yaml
+# carries the actual Helm error text which would be truncated to 140 characters if written as a commit status
+# using 'flux-github-dispatch-app' separate from 'github-status' to minimize permissions given to the latter
+# (repository_dispatch is a contents-write API call)
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Provider
+metadata:
+  name: github-dispatch
+  namespace: flux-system
+spec:
+  type: githubdispatch
+  address: ${GITHUB_REPO_URL}
+  secretRef:
+    name: flux-github-dispatch-app

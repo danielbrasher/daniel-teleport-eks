@@ -16,3 +16,6 @@ spec:
     - name: groups
       value: teleport-users
       roles: ["okta-base-requester"]
+    - name: groups
+      value: teleport-admins
+      roles: ["editor", "access", "okta-approver"]

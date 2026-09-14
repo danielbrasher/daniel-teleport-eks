@@ -8,7 +8,7 @@ spec:
     kubernetes_labels:
       env: ["dev"]
     kubernetes_groups: ["k8s-dev-{{external.team}}"]
-    kubernetes_users: ["{{external.posixUsername}}"]
+    kubernetes_users: ["{{email.local(external.username)}}"]
     kubernetes_resources:
       - kind: "*"
         api_group: "*"

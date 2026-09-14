@@ -5,11 +5,9 @@ metadata:
   namespace: teleport
 spec:
   allow:
-    logins: ["{{external.posixUsername}}"]
+    logins: ["{{email.local(external.username)}}"]
     node_labels:
       aws/env: ["dev"]
-  deny:
-    logins: ["root"]
   options:
     create_host_user_mode: keep
     create_host_user_default_shell: /bin/bash

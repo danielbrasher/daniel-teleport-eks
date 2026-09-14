@@ -1,0 +1,15 @@
+# backs volumeClaimTemplate in infrastructure/postgres/statefulset.yaml
+# provisioner is from aws-ebs-csi-driver addon in terraform/ebs-csi.tf (PVC would stay Pending otherwise)
+# NOT marked as cluster default to avoid possible collision with pre-existing cluster default
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gp3
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp3
+  encrypted: "true"
+  fsType: ext4
+volumeBindingMode: WaitForFirstConsumer # bind only once the pod is scheduled so the volume is in the availability zone the pod runs in
+allowVolumeExpansion: true
+reclaimPolicy: Retain

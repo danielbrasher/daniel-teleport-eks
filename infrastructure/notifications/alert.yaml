@@ -1,0 +1,14 @@
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Alert
+metadata:
+  name: github-status
+  namespace: flux-system
+spec:
+  providerRef:
+    name: github-status
+  eventSeverity: error
+  eventSources:
+    # Kustomization is only eventSource for this bc git commit status providers require a commit hash in the event metadata, which only Kustomizations carry
+    # HelmRelease events handled by github-dispatch provider
+    - kind: Kustomization
+      name: "*"

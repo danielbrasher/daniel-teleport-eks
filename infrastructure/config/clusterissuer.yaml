@@ -7,11 +7,11 @@ spec:
     server: https://acme-v02.api.letsencrypt.org/directory
     email: ${ACME_EMAIL}
     privateKeySecretRef:
-      name: letsencrypt-production-account-key # TODO
+      name: letsencrypt-production-account-key # autopopulated
     solvers:
       - dns01:
           route53:
             region: ${AWS_REGION}
         selector:
           dnsZones:
-            - dbteleport.com
+            - ${DNS_ZONE_NAME}

@@ -1,0 +1,14 @@
+apiVersion: resources.teleport.dev/v1
+kind: TeleportRoleV8
+metadata:
+  name: okta-approver
+  namespace: teleport
+spec:
+  allow:
+    review_requests:
+      roles:
+        - okta-kube-access
+        # - okta-ssh-access # autoapproved
+        - okta-ssh-root
+  options:
+    max_session_ttl: 12h

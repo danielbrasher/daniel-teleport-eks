@@ -5,6 +5,10 @@ locals {
     auth      = "system:serviceaccount:${var.teleport_namespace}:teleport"
     discovery = "system:serviceaccount:${var.teleport_namespace}:teleport-kube-agent"
     eso       = "system:serviceaccount:${var.external_secrets_namespace}:${var.external_secrets_service_account}"
+
+    cert_manager = "system:serviceaccount:${var.cert_manager_namespace}:${var.cert_manager_service_account}"
+    # fixed by the aws-ebs-csi-driver addon
+    ebs_csi = "system:serviceaccount:kube-system:ebs-csi-controller-sa"
   }
 }
 
@@ -34,7 +38,7 @@ data "aws_iam_policy_document" "irsa_assume" {
   }
 }
 
-# Auth/Proxy pods (teleport/teleport SA) -> S3 session recordings
+# Auth/Proxy pods (teleport/teleport SA -> S3 session recordings)
 resource "aws_iam_role" "auth" {
   name               = "${var.name_prefix}-auth"
   description        = "Teleport Auth/Proxy: S3 session recording storage"
@@ -80,7 +84,6 @@ resource "aws_iam_role_policy_attachment" "auth_sessions" {
 }
 
 # Discovery Service pod (teleport/teleport-kube-agent SA)
-# TODO: import existing role if TF says this already exists ("terraform import aws_iam_role.discovery daniel-teleport-discovery")
 resource "aws_iam_role" "discovery" {
   name               = "${var.name_prefix}-discovery"
   description        = "Teleport Discovery Service: EC2 discovery + SSM agent install"
@@ -140,7 +143,7 @@ resource "aws_iam_role_policy_attachment" "discovery" {
 # External Secrets Operator -> AWS Secrets Manager
 resource "aws_iam_role" "external_secrets" {
   name               = "${var.name_prefix}-external-secrets"
-  description        = "External Secrets Operator: read the Teleport license from Secrets Manager"
+  description        = "External Secrets Operator: read the Teleport license and Flux GitHub App creds from Secrets Manager"
   assume_role_policy = data.aws_iam_policy_document.irsa_assume["eso"].json
 }
 
@@ -151,7 +154,11 @@ data "aws_iam_policy_document" "external_secrets" {
       "secretsmanager:GetSecretValue",
       "secretsmanager:DescribeSecret",
     ]
-    resources = [aws_secretsmanager_secret.license.arn]
+    resources = [
+      aws_secretsmanager_secret.license.arn,
+      aws_secretsmanager_secret.flux_github_app.arn,
+      aws_secretsmanager_secret.flux_github_dispatch_app.arn,
+    ]
   }
 
   statement {
@@ -169,4 +176,50 @@ resource "aws_iam_policy" "external_secrets" {
 resource "aws_iam_role_policy_attachment" "external_secrets" {
   role       = aws_iam_role.external_secrets.name
   policy_arn = aws_iam_policy.external_secrets.arn
+}
+
+# cert-manager -> Route53
+# for the DNS-01 solver on the letsencrypt-production ClusterIssuer (infrastructure/config/clusterissuer.yaml)
+resource "aws_iam_role" "cert_manager" {
+  name               = "${var.name_prefix}-cert-manager"
+  description        = "cert-manager: solve ACME DNS-01 challenges in Route53"
+  assume_role_policy = data.aws_iam_policy_document.irsa_assume["cert_manager"].json
+}
+
+data "aws_iam_policy_document" "cert_manager" {
+  statement {
+    sid       = "PollChallengePropagation"
+    effect    = "Allow"
+    actions   = ["route53:GetChange"]
+    resources = ["arn:${local.partition}:route53:::change/*"]
+  }
+
+  # scoped to single zone
+  statement {
+    sid    = "WriteChallengeRecords"
+    effect = "Allow"
+    actions = [
+      "route53:ChangeResourceRecordSets",
+      "route53:ListResourceRecordSets",
+    ]
+    resources = ["arn:${local.partition}:route53:::hostedzone/${data.aws_route53_zone.this.zone_id}"]
+  }
+
+  # zone lookup by name (ClusterIssuer doesn't pin hostedZoneID)
+  statement {
+    sid       = "FindZone"
+    effect    = "Allow"
+    actions   = ["route53:ListHostedZonesByName"]
+    resources = ["*"] # ListHostedZonesByName has no resource-level scoping
+  }
+}
+
+resource "aws_iam_policy" "cert_manager" {
+  name   = "${var.name_prefix}-cert-manager"
+  policy = data.aws_iam_policy_document.cert_manager.json
+}
+
+resource "aws_iam_role_policy_attachment" "cert_manager" {
+  role       = aws_iam_role.cert_manager.name
+  policy_arn = aws_iam_policy.cert_manager.arn
 }

@@ -68,6 +68,28 @@ variable "external_secrets_service_account" {
   default = "external-secrets"
 }
 
+variable "cert_manager_namespace" {
+  type    = string
+  default = "cert-manager"
+}
+
+variable "cert_manager_service_account" {
+  type    = string
+  default = "cert-manager"
+}
+
+variable "dns_zone_name" {
+  type        = string
+  default     = "dbteleport.com"
+  description = "Public Route53 zone cert-manager solves DNS-01 challenges in"
+}
+
+variable "manage_ebs_csi_addon" {
+  type        = bool
+  default     = true
+  description = "Attach the aws-ebs-csi-driver addon (+ its IRSA role) to the pre-existing cluster. Required for the gp3 StorageClass the Postgres StatefulSet claims from."
+}
+
 variable "create_node_instance_profile" {
   type        = bool
   default     = true
@@ -83,7 +105,7 @@ variable "github_repo" {
 variable "create_github_oidc_provider" {
   type        = bool
   default     = false
-  description = "Set true only if token.actions.githubusercontent.com is not already an OIDC provider in this account" # TODO: check, think already present
+  description = "Set true only if token.actions.githubusercontent.com is not already an OIDC provider in this account" # it's already a provider on our shared account
 }
 
 variable "manage_ci_role" {

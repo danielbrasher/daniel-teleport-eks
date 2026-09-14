@@ -6,7 +6,7 @@ metadata:
   namespace: flux-system
 spec:
   dependsOn:
-    - name: teleport-resources # bc aws-discovery-iam-token must exist in Teleport for the agent to authenticate to the Auth Service
+    - name: teleport-resources-roles # last in the 'teleport-resources' dependency chain - the real fine-grained dependency is 'teleport-resources-tokens'
   interval: 30m
   retryInterval: 2m
   timeout: 10m

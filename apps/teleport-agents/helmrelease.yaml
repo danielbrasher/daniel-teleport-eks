@@ -35,10 +35,12 @@ spec:
     annotations:
       serviceAccount:
         eks.amazonaws.com/role-arn: ${TELEPORT_DISCOVERY_ROLE_ARN}
-# TODO: check below!
+
+    # set based on the assumption this is a small to medium sized environment
     resources:
       requests:
         cpu: 100m
         memory: 256Mi
       limits:
+        # no CPU limits, see: https://github.com/gravitational/teleport/pull/36251
         memory: 512Mi

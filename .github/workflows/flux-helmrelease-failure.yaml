@@ -1,0 +1,69 @@
+# receives repository_dispatch events from the github-dispatch notification Provider, then files the Helm error text as an issue
+# not tied to particular commit (HelmRelease events don't include the SHA that introduced them - just the chart version as its revision)
+# only commit association is on the owning Kustomization's status instead
+name: flux-helmrelease-failure
+
+on:
+  repository_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  # serialize per Flux object so two events for the same release can't both decide no issue exists and open a duplicate
+  group: flux-failure-${{ github.event.action }}
+  cancel-in-progress: false
+
+jobs:
+  report:
+    if: startsWith(github.event.action, 'HelmRelease/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const p = context.payload.client_payload;
+            const obj = p.involvedObject || {};
+            const title = `Flux: ${obj.kind}/${obj.name} failed to reconcile`;
+
+            const body = [
+              `**Cluster:** ${p.metadata?.cluster ?? 'unknown'}`,
+              `**Namespace:** ${obj.namespace ?? 'unknown'}`,
+              `**Reason:** ${p.reason ?? 'unknown'}`,
+              `**Chart revision:** ${p.metadata?.revision ?? 'n/a'}`,
+              `**At:** ${p.timestamp ?? 'unknown'}`,
+              '',
+              '```',
+              p.message ?? '(no message)',
+              '```',
+              '',
+              '_Commit association is on the owning Kustomization\'s commit status, not here —' +
+              ' a HelmRelease event carries no git SHA._',
+            ].join('\n');
+
+            // One open issue per failing object; subsequent failures comment on it.
+            const open = await github.paginate(github.rest.issues.listForRepo, {
+              ...context.repo,
+              state: 'open',
+              labels: 'flux-failure',
+              per_page: 100,
+            });
+            const hit = open.find(i => i.title === title);
+
+            if (hit) {
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number: hit.number,
+                body,
+              });
+              core.notice(`Commented on #${hit.number}`);
+            } else {
+              const created = await github.rest.issues.create({
+                ...context.repo,
+                title,
+                body,
+                labels: ['flux-failure'],
+              });
+              core.notice(`Opened #${created.data.number}`);
+            }

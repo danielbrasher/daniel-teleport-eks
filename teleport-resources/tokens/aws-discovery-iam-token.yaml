@@ -1,32 +1,25 @@
-# The IAM join token referenced twice in the kube-agent values:
-#   joinParams.tokenName                                  (the agent itself)
-#   discovery_service.aws[].install.join_params.token_name (nodes SSM installs)
-#
-# It did not exist anywhere in the files you sent, and the agent cannot join
-# without it -- hence the Flux dependsOn ordering (teleport-resources before
-# teleport-agents).
-#
-# With method: iam, Teleport verifies the joiner's sts:GetCallerIdentity result
-# against these allow rules. Two distinct identities join with this token:
-#   - the Discovery Service pod, via IRSA (assumed-role/daniel-teleport-discovery)
-#   - each discovered EC2 instance, via its instance profile
-#
-# aws_arn is a glob. Keeping it tight matters: an IAM-join token with only
-# aws_account set lets ANY principal in account 278576220453 register as a Node.
+# referenced twice in the kube-agent values:
+# 1. joinParams.tokenName (the agent itself)
+# 2. discovery_service.aws[].install.join_params.token_name (nodes SSM installs)
+# required for kube-agent to join, enforced by Flux dependsOn
+# (ensures teleport-resources are present before teleport-agents)
+
+# more tightly scoped than an IAM join token with only aws_account set, which would let ANY principal in the account register as a Node
 apiVersion: resources.teleport.dev/v2
 kind: TeleportProvisionToken
 metadata:
   name: aws-discovery-iam-token
   namespace: teleport
 spec:
+  # Teleport verifies joiner's sts:GetCallerIdentity result against allow rules
   join_method: iam
   roles:
-    - Discovery
-    - Node
+    - Discovery # joins with this token via IRSA (assumed-role/daniel-teleport-discovery)
+    - Node # joins with this token via instance profile
   allow:
     # Discovery Service pod (IRSA)
     - aws_account: "${AWS_ACCOUNT_ID}"
       aws_arn: "arn:aws:sts::${AWS_ACCOUNT_ID}:assumed-role/daniel-teleport-discovery/*"
-    # Discovered EC2 instances
+    # discovered EC2 instances
     - aws_account: "${AWS_ACCOUNT_ID}"
       aws_arn: "arn:aws:sts::${AWS_ACCOUNT_ID}:assumed-role/${TELEPORT_EC2_NODE_ROLE}/*"

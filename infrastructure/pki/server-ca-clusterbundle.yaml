@@ -1,6 +1,6 @@
 # CA that signs the Postgres server cert for Teleport
-apiVersion: trust.cert-manager.io/v1alpha1
-kind: Bundle
+apiVersion: trust-manager.io/v1alpha2
+kind: ClusterBundle
 metadata:
   name: teleport-postgres-server-ca
 spec:

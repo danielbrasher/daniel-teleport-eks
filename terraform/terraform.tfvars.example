@@ -1,0 +1,11 @@
+region                = "us-west-1"
+name_prefix           = "your-prefix"
+eks_cluster_name      = "your-cluster-name"
+teleport_namespace    = "teleport"
+teleport_cluster_name = "your-cluster.your-domain.com"
+
+session_recording_bucket = "your-bucket"
+dns_zone_name            = "your-domain.com"
+
+github_repo                 = "your-repo"
+create_github_oidc_provider = false

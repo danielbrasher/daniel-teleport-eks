@@ -1,14 +1,5 @@
-###############################################################################
-# EC2 auto-discovery plumbing
-#
-# The Discovery Service finds tagged instances, then asks SSM to run this
-# document on them. The document downloads the installer script that your own
-# Proxy Service serves and runs it with the IAM join token.
-#
-# Verify the document body against the version Teleport publishes for your
-# release before you rely on it:
-#   https://goteleport.com/docs/enroll-resources/auto-discovery/servers/ec2-discovery/
-###############################################################################
+# EC2 autodiscovery (https://goteleport.com/docs/enroll-resources/auto-discovery/servers/ec2-discovery/)
+# Discovery Service finds instances with matching tags, then asks SSM to run this document on those instances.  The document downloads the installer script served by the Proxy Service, then runs it with the IAM join token.
 
 resource "aws_ssm_document" "installer" {
   name            = var.ssm_document_name
@@ -46,9 +37,10 @@ resource "aws_ssm_document" "installer" {
   DOC
 }
 
-# ---- Instance role for discoverable EC2 nodes -------------------------------
-# Two jobs: let SSM manage the instance, and give it an AWS identity the
-# Teleport IAM join token can allow (see teleport-resources/tokens/).
+# instance role for discoverable EC2 nodes
+# 1. lets SSM manage the instance and
+# 2. gives it an AWS identity the Teleport IAM join token can allow (teleport-resources/tokens/)
+
 data "aws_iam_policy_document" "ec2_assume" {
   statement {
     effect  = "Allow"

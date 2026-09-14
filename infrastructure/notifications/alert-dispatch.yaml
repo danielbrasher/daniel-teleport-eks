@@ -1,0 +1,16 @@
+# handles HelmRelease errors only
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Alert
+metadata:
+  name: helmrelease-failures
+  namespace: flux-system
+spec:
+  providerRef:
+    name: github-dispatch
+  eventSeverity: error
+  eventSources:
+    - kind: HelmRelease
+      name: "*"
+ # in case there's more than one cluster, want to know which one broke
+  eventMetadata:
+    cluster: ${EKS_CLUSTER_NAME}
