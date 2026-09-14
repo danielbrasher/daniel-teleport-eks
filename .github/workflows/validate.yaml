@@ -27,6 +27,7 @@ jobs:
           tar -xzf /tmp/kubeconform.tar.gz -C /usr/local/bin kubeconform
           curl -sSL https://get.helm.sh/helm-v3.16.2-linux-amd64.tar.gz | tar -xz -C /tmp
           sudo mv /tmp/linux-amd64/helm /usr/local/bin/helm
+          pip install --quiet --break-system-packages "PyYAML>=6.0.1"
 
       # Allow kubeconform to validate Teleport manifests against their schemas
       - name: Generate Teleport CRD schemas

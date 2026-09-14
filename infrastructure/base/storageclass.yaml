@@ -9,6 +9,7 @@ provisioner: ebs.csi.aws.com
 parameters:
   type: gp3
   encrypted: "true"
+  fsType: ext4
 volumeBindingMode: WaitForFirstConsumer # # bind only once the pod is scheduled so the volume ends up in the availability zone the Pod runs in
 allowVolumeExpansion: true
 reclaimPolicy: Retain # don't want to delete the EBS volume if the PVC gets deleted/pruned unintentionally
