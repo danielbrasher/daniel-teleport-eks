@@ -38,7 +38,10 @@ jobs:
           set -euo pipefail
           for d in infrastructure/base infrastructure/controllers infrastructure/config \
                    infrastructure/pki infrastructure/postgres infrastructure/notifications \
-                   apps/teleport-cluster apps/teleport-agents teleport-resources k8s-rbac; do
+                   apps/teleport-cluster apps/teleport-agents \
+                   teleport-resources/tokens teleport-resources/connectors \
+                   teleport-resources/access-monitoring-rules teleport-resources/roles \
+                   k8s-rbac; do
             echo "::group::$d"
             kustomize build "$d" > "/tmp/$(echo "$d" | tr / -).yaml"
             echo "::endgroup::"
