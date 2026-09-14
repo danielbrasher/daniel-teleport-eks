@@ -2,7 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: teleport
 resources:
-  - tokens/aws-discovery-iam-token.yaml
+  - aws-discovery-iam-token.yaml
 labels:
   - includeSelectors: false
     pairs:
