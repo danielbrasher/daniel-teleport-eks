@@ -14,14 +14,17 @@ mkdir -p "$OUT"
 helm repo add teleport https://charts.releases.teleport.dev >/dev/null 2>&1 || true
 helm repo update teleport >/dev/null
 
+# add additional "--set" here if chart adds another required value in a future release...revisit...
 helm template teleport teleport/teleport-cluster \
   --version "$VERSION" \
   --set operator.enabled=true \
+  --set clusterName=placeholder.example.com \
   --include-crds \
   --show-only crds \
   > /tmp/teleport-crds.yaml 2>/dev/null \
   || helm template teleport teleport/teleport-cluster \
        --version "$VERSION" --set operator.enabled=true --include-crds \
+       --set clusterName=placeholder.example.com \
        > /tmp/teleport-crds.yaml
 
 ( cd "$OUT" && FILENAME_FORMAT='{kind}_{version}' python3 "$CONVERTER" /tmp/teleport-crds.yaml )
