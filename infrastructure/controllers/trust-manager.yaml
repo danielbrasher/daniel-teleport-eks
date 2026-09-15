@@ -12,7 +12,7 @@ spec:
   chart:
     spec:
       chart: trust-manager
-      version: "1.21"
+      version: "0.25.x"
       sourceRef:
         kind: HelmRepository
         name: jetstack

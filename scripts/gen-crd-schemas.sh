@@ -27,6 +27,14 @@ helm template teleport teleport/teleport-cluster \
        --set clusterName=placeholder.example.com \
        > /tmp/teleport-crds.yaml
 
-( cd "$OUT" && FILENAME_FORMAT='{kind}_{version}' python3 "$CONVERTER" /tmp/teleport-crds.yaml )
+# trust-manager's ClusterBundle isn't in the datreeio CRDs-catalog yet - converting locally
+TRUST_MANAGER_VERSION=v0.25.0 # keep in sync with chart version in infrastructure/controllers/trust-manager.yaml
+curl -sSL -o /tmp/trust-manager-crds.yaml \
+  "https://raw.githubusercontent.com/cert-manager/trust-manager/${TRUST_MANAGER_VERSION}/deploy/crds/trust-manager.io_clusterbundles.yaml"
+
+( cd "$OUT" \
+  && FILENAME_FORMAT='{kind}_{version}' python3 "$CONVERTER" \
+       /tmp/teleport-crds.yaml \
+       /tmp/trust-manager-crds.yaml )
 
 echo "Wrote $(ls -1 "$OUT" | wc -l) schemas to $OUT"

@@ -4,13 +4,14 @@ kind: ClusterBundle
 metadata:
   name: teleport-db-client-ca
 spec:
-  sources:
-    - secret:
-        name: postgres-client-ca-key-pair
-        key: tls.crt
+  sourceRefs:
+    - kind: Secret
+      name: postgres-client-ca-key-pair
+      key: tls.crt
   target:
     configMap:
-      key: db-client.cas
+      data:
+        - key: db-client.cas
     namespaceSelector:
       matchLabels:
         kubernetes.io/metadata.name: teleport-databases

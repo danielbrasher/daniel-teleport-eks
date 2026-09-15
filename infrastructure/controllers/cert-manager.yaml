@@ -8,7 +8,7 @@ spec:
   chart:
     spec:
       chart: cert-manager
-      version: "1.21.1"
+      version: "1.21.1" # TODO: eval whether you want this pinned this way (versus 0.25.x on trust-manager)
       sourceRef:
         kind: HelmRepository
         name: jetstack
