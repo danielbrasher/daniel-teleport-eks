@@ -63,10 +63,11 @@ jobs:
 
       - name: Validate Flux Kustomizations
         run: |
-          cat clusters/daniel-eks-cluster/*.yaml | kubeconform \
+          kubeconform \
             -strict -summary -schema-location default \
             -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
-            -ignore-missing-schemas
+            -ignore-missing-schemas \
+            clusters/daniel-eks-cluster/*.yaml
 
       # Render Helm charts with values so bad keys/values fail here rather than creating a stuck HelmRelease
       - name: helm template
