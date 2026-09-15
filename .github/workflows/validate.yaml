@@ -36,6 +36,7 @@ jobs:
       - name: kustomize build every path
         run: |
           set -euo pipefail
+          mkdir -p /tmp/rendered
           for d in infrastructure/base infrastructure/controllers infrastructure/config \
                    infrastructure/pki infrastructure/postgres infrastructure/notifications \
                    apps/teleport-cluster apps/teleport-agents \
@@ -43,14 +44,14 @@ jobs:
                    teleport-resources/access-monitoring-rules teleport-resources/roles \
                    k8s-rbac; do
             echo "::group::$d"
-            kustomize build "$d" > "/tmp/$(echo "$d" | tr / -).yaml"
+            kustomize build "$d" > "/tmp/rendered/$(echo "$d" | tr / -).yaml"
             echo "::endgroup::"
           done
 
       - name: kubeconform
         run: |
           set -euo pipefail
-          for f in /tmp/*.yaml; do
+          for f in /tmp/rendered/*.yaml; do
             kubeconform \
               -strict \
               -summary \
