@@ -1,17 +1,16 @@
 # CA that signs the Postgres server cert for Teleport
-apiVersion: trust-manager.io/v1alpha2
-kind: ClusterBundle
+apiVersion: trust.cert-manager.io/v1alpha1
+kind: Bundle
 metadata:
   name: teleport-postgres-server-ca
 spec:
-  sourceRefs:
-    - kind: Secret
+  sources:
+    - secret:
       name: postgres-ca-key-pair
       key: tls.crt
   target:
     configMap:
-      data:
-        - key: ca.crt
+      key: ca.crt
     namespaceSelector:
       matchLabels:
         kubernetes.io/metadata.name: teleport
