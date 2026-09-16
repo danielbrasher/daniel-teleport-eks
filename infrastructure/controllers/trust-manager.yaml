@@ -26,6 +26,6 @@ spec:
       trust:
         namespace: cert-manager # ns that trust-manager reads Bundle sources from (where both CA keypairs live)
   timeout: 10m
-  install:
+  upgrade:
     remediation:
       retries: 2
