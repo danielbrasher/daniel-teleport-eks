@@ -10,7 +10,7 @@ spec:
   interval: 10m
   retryInterval: 1m
   timeout: 5m
-  path: ./teleport-resources/tokens
+  path: ./teleport-resources/connectors
   prune: true
   wait: true
   sourceRef:

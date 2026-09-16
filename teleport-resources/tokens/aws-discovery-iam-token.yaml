@@ -18,8 +18,8 @@ spec:
     - Node # joins with this token via instance profile
   allow:
     # Discovery Service pod (IRSA)
-    - aws_account: "${AWS_ACCOUNT_ID}"
+    - aws_account: ${AWS_ACCOUNT_ID_QUOTED}
       aws_arn: "arn:aws:sts::${AWS_ACCOUNT_ID}:assumed-role/daniel-teleport-discovery/*"
     # discovered EC2 instances
-    - aws_account: "${AWS_ACCOUNT_ID}"
+    - aws_account: ${AWS_ACCOUNT_ID_QUOTED}
       aws_arn: "arn:aws:sts::${AWS_ACCOUNT_ID}:assumed-role/${TELEPORT_EC2_NODE_ROLE}/*"

@@ -6,6 +6,7 @@ metadata:
 data:
   AWS_REGION: "us-west-1"
   AWS_ACCOUNT_ID: "278576220453"
+  AWS_ACCOUNT_ID_QUOTED: "\"278576220453\"" # thanks Kustomize
   EKS_CLUSTER_NAME: "daniel-eks-cluster"
   TELEPORT_CLUSTER_NAME: "teleport-eks.dbteleport.com"
 
