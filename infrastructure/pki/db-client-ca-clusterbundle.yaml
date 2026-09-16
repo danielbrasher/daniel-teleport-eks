@@ -6,8 +6,8 @@ metadata:
 spec:
   sources:
     - secret:
-      name: postgres-client-ca-key-pair
-      key: tls.crt
+        name: postgres-client-ca-key-pair
+        key: tls.crt
   target:
     configMap:
       key: db-client.cas
