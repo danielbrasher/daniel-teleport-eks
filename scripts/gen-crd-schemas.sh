@@ -29,6 +29,6 @@ helm template teleport teleport/teleport-cluster \
 
 ( cd "$OUT" \
   && FILENAME_FORMAT='{kind}_{version}' python3 "$CONVERTER" \
-       /tmp/trust-manager-crds.yaml )
+       /tmp/teleport-crds.yaml )
 
 echo "Wrote $(ls -1 "$OUT" | wc -l) schemas to $OUT"
