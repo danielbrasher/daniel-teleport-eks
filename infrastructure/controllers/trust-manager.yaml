@@ -21,11 +21,10 @@ spec:
     crds: Create
   upgrade:
     crds: CreateReplace
+    remediation:
+    retries: 2
   values:
     app:
       trust:
         namespace: cert-manager # ns that trust-manager reads Bundle sources from (where both CA keypairs live)
   timeout: 10m
-  upgrade:
-    remediation:
-      retries: 2
