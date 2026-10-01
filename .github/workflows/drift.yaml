@@ -41,7 +41,6 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
       - run: terraform init
       - id: plan
-        run: terraform plan -detailed-exitcode -no-color -input=false || echo "code=$?" >> "$GITHUB_OUTPUT"
         run: |
           set +e
           terraform plan -detailed-exitcode -no-color -input=false
