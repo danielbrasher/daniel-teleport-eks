@@ -21,6 +21,17 @@ concurrency:
 env:
   AWS_REGION: us-west-1
   TF_IN_AUTOMATION: "true"
+  TF_VAR_region: ${{ vars.AWS_REGION }}
+  TF_VAR_name_prefix: ${{ vars.NAME_PREFIX }}
+  TF_VAR_eks_cluster_name: ${{ vars.EKS_CLUSTER_NAME }}
+  TF_VAR_teleport_namespace: ${{ vars.TELEPORT_NAMESPACE }}
+  TF_VAR_teleport_cluster_name: ${{ vars.TELEPORT_CLUSTER_NAME }}
+  TF_VAR_session_recording_bucket: ${{ vars.SESSION_RECORDING_BUCKET }}
+  TF_VAR_ssm_document_name: ${{ vars.SSM_DOCUMENT_NAME }}
+  TF_VAR_discoverable_tag: ${{ vars.DISCOVERABLE_TAG }}
+  TF_VAR_dns_zone_name: ${{ vars.DNS_ZONE_NAME }}
+  TF_VAR_github_repo: ${{ vars.TF_VAR_GITHUB_REPO }} # ${{ vars.GITHUB_REPO }}
+  TF_VAR_tags: ${{ vars.TAGS }}
 
 jobs:
   plan:
