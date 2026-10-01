@@ -11,6 +11,16 @@ spec:
   eventSources:
     - kind: HelmRelease
       name: "*"
+      namespace: teleport
+    - kind: HelmRelease
+      name: "*"
+      namespace: cert-manager
+    - kind: HelmRelease
+      name: "*"
+      namespace: external-secrets
+    - kind: HelmRelease
+      name: "*"
+      namespace: flux-system
  # in case there's more than one cluster, want to know which one broke
   eventMetadata:
     cluster: ${EKS_CLUSTER_NAME}

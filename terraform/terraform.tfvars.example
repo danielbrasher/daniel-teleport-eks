@@ -1,11 +1,18 @@
-region                = "us-west-1"
-name_prefix           = "your-prefix"
-eks_cluster_name      = "your-cluster-name"
-teleport_namespace    = "teleport"
-teleport_cluster_name = "your-cluster.your-domain.com"
-
-session_recording_bucket = "your-bucket"
-dns_zone_name            = "your-domain.com"
-
-github_repo                 = "your-repo"
-create_github_oidc_provider = false
+region                    = "us-west-1"
+name_prefix               = "your-prefix"
+eks_cluster_name          = "your-cluster-name"
+teleport_namespace        = "teleport"
+teleport_cluster_name     = "your-cluster.your-domain.com"
+session_recording_bucket  = "your-bucket"
+ssm_document_name         = "your-ssm-document-name"
+discoverable_tag          = {
+                              key   = "your-tag-key"
+                              value = "your-tag-value"
+                            }
+dns_zone_name             = "your-domain.com"
+github_repo               = "your-username@your-owner-id/your-repo-name@your-repo-id"
+tags                      = {
+                              app          = "teleport"
+                              "managed-by" = "terraform"
+                              owner        = "your-github-username"
+                            }

@@ -38,7 +38,7 @@ jobs:
 
       - uses: hashicorp/setup-terraform@v4
         with:
-          terraform_version: 1.15.8
+          terraform_version: 1.16.4
 
       - run: terraform fmt -check -recursive
       - run: terraform init
@@ -47,6 +47,7 @@ jobs:
       - name: plan
         id: plan
         run: |
+          set -o pipefail
           terraform plan -no-color -input=false -out=tfplan | tee plan.txt
           echo "exitcode=$?" >> "$GITHUB_OUTPUT"
 
@@ -88,7 +89,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
       - uses: hashicorp/setup-terraform@v4
         with:
-          terraform_version: 1.15.8
+          terraform_version: 1.16.4
       - uses: actions/download-artifact@v8
         with:
           name: tfplan

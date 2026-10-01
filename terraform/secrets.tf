@@ -18,8 +18,9 @@ resource "aws_secretsmanager_secret" "license" {
 resource "aws_secretsmanager_secret_version" "license_placeholder" {
   secret_id = aws_secretsmanager_secret.license.id
 
+  # replaced out of band
   secret_string = jsonencode({
-    "license.pem" = "REPLACE_ME" # replaced out of band
+    "license.pem" = "REPLACE_ME"
   })
 
   lifecycle {

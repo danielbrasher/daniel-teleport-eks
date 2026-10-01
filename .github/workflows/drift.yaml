@@ -27,6 +27,12 @@ jobs:
       - run: terraform init
       - id: plan
         run: terraform plan -detailed-exitcode -no-color -input=false || echo "code=$?" >> "$GITHUB_OUTPUT"
+        run: |
+          set +e
+          terraform plan -detailed-exitcode -no-color -input=false
+          code=$?
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          if [ "$code" -eq 1 ]; then exit 1; fi
       - if: steps.plan.outputs.code == '2'
         uses: actions/github-script@v7
         with:

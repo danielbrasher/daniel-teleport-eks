@@ -1,10 +1,10 @@
 terraform {
-  required_version = ">= 1.16.0"
+  required_version = "~> 1.16"
 
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 6.63"
+      version = "~> 6.67"
     }
   }
 
@@ -15,7 +15,7 @@ terraform {
     region       = "us-west-1"
     encrypt      = true
     use_lockfile = true # S3-native locking - don't need a DynamoDB table to handle
-  #}
+  }
 }
 
 provider "aws" {
