@@ -37,10 +37,7 @@ jobs:
       - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
-          aws-region: us-west-1
-          # force the action to use the regional endpoint for us-west-1
-          # otherwise will hit an "Access denied for iam:GetRole" error
-          sts-endpoint: https://amazonaws.com
+          aws-region: ${{ env.AWS_REGION }}
       - uses: hashicorp/setup-terraform@v3
       - run: terraform init
       - id: plan
