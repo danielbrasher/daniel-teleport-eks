@@ -32,7 +32,7 @@ spec:
       valuesKey: values.yaml
 
   values:
-    teleportVersionOverride: "${TELEPORT_VERSION}" # decouple Teleport version from Helm chart version if different interpolated var interpolated (flexibility)
+    teleportVersionOverride: "${TELEPORT_VERSION}" # decouple Teleport version from Helm chart version if different var interpolated (flexibility)
     annotations:
       serviceAccount:
         eks.amazonaws.com/role-arn: ${TELEPORT_DISCOVERY_ROLE_ARN}
