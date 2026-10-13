@@ -10,6 +10,7 @@ spec:
         - okta-kube-access
         # - okta-ssh-access # autoapproved
         - okta-ssh-root
+      preview_as_roles:
         - okta-prod-ssh-access
   options:
     max_session_ttl: 12h
