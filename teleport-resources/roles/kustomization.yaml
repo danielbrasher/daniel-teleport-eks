@@ -2,6 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: teleport
 resources:
+  - okta-approver.yaml
   - okta-base-requester.yaml
   - okta-kube-access.yaml
   - okta-ssh-access.yaml

@@ -19,3 +19,6 @@ spec:
     - name: groups
       value: teleport-admins
       roles: ["editor", "access", "okta-approver"]
+    - name: groups
+      value: teleport-servicenow-users
+      roles: ["okta-prod-ssh-requester"]
