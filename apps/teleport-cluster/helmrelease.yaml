@@ -61,6 +61,12 @@ spec:
         # no CPU limits, see: https://github.com/gravitational/teleport/pull/36251
         memory: 2Gi
 
+    podMonitor:
+      enabled: true
+      interval: 30s
+      additionalLabels:
+        release: kube-prometheus-stack
+
     # set based on the assumption this is a small to medium sized environment
     operator:
       enabled: true
