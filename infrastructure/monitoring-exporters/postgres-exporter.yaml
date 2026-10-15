@@ -41,6 +41,17 @@ spec:
   values:
     fullnameOverride: postgres-exporter
 
+    # mirroring chart defaults - omitting would drop runAsNonRoot and the seccomp profile
+    securityContext:
+      runAsUser: 1001
+      runAsGroup: 1001
+      runAsNonRoot: true
+      # without fsGroup added and set, projected cert files would be owned root:root
+      # which would make the client key unreadable by the non-root exporter
+      fsGroup: 1001
+      seccompProfile:
+        type: RuntimeDefault
+
     config:
       datasourceSecret:
         name: postgres-exporter-dsn
@@ -54,7 +65,7 @@ spec:
     extraVolumes:
       - name: pg-tls
         projected:
-          defaultMode: 0400
+          defaultMode: 0440 # allows cert to be read by the group the container runs as
           sources:
             - secret:
                 name: postgres-exporter-client-tls
