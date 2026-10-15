@@ -7,6 +7,7 @@ locals {
     eso       = "system:serviceaccount:${var.external_secrets_namespace}:${var.external_secrets_service_account}"
 
     cert_manager = "system:serviceaccount:${var.cert_manager_namespace}:${var.cert_manager_service_account}"
+    grafana      = "system:serviceaccount:${var.monitoring_namespace}:${var.grafana_service_account}"
     # fixed by the aws-ebs-csi-driver addon
     ebs_csi = "system:serviceaccount:kube-system:ebs-csi-controller-sa"
   }
@@ -176,6 +177,49 @@ resource "aws_iam_policy" "external_secrets" {
 resource "aws_iam_role_policy_attachment" "external_secrets" {
   role       = aws_iam_role.external_secrets.name
   policy_arn = aws_iam_policy.external_secrets.arn
+}
+
+# Grafana -> CloudWatch
+# Read-only metric access for the CloudWatch datasource covering S3 request/storage metrics on the session
+# recording bucket as well as load balancer metrics for the proxy
+resource "aws_iam_role" "grafana" {
+  name               = "${var.name_prefix}-grafana"
+  description        = "Grafana: read CloudWatch metrics for the session recording bucket and proxy load balancer"
+  assume_role_policy = data.aws_iam_policy_document.irsa_assume["grafana"].json
+}
+
+data "aws_iam_policy_document" "grafana_cloudwatch" {
+  statement {
+    sid    = "ReadMetrics"
+    effect = "Allow"
+    actions = [
+      "cloudwatch:ListMetrics",
+      "cloudwatch:GetMetricData",
+      "cloudwatch:GetMetricStatistics",
+      "cloudwatch:DescribeAlarmsForMetric",
+      "cloudwatch:DescribeAlarmHistory",
+      "cloudwatch:DescribeAlarms",
+    ]
+    resources = ["*"] # CloudWatch metric reads have no resource-level scoping
+  }
+
+  # Needed because Grafana's CloudWatch datasource populates the region picker and resolves dimension values from tags
+  statement {
+    sid       = "ResolveRegionsAndDimensions"
+    effect    = "Allow"
+    actions   = ["ec2:DescribeRegions", "tag:GetResources"]
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_policy" "grafana_cloudwatch" {
+  name   = "${var.name_prefix}-grafana-cloudwatch"
+  policy = data.aws_iam_policy_document.grafana_cloudwatch.json
+}
+
+resource "aws_iam_role_policy_attachment" "grafana_cloudwatch" {
+  role       = aws_iam_role.grafana.name
+  policy_arn = aws_iam_policy.grafana_cloudwatch.arn
 }
 
 # cert-manager -> Route53

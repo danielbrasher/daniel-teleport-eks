@@ -39,6 +39,7 @@ jobs:
           mkdir -p /tmp/rendered
           for d in infrastructure/base infrastructure/controllers infrastructure/config \
                    infrastructure/pki infrastructure/postgres infrastructure/notifications \
+                   infrastructure/monitoring infrastructure/monitoring-exporters \
                    apps/teleport-cluster apps/teleport-agents \
                    teleport-resources/tokens teleport-resources/connectors \
                    teleport-resources/access-monitoring-rules teleport-resources/roles \

@@ -18,6 +18,7 @@ data:
   EXTERNAL_SECRETS_ROLE_ARN: "arn:aws:iam::278576220453:role/daniel-teleport-external-secrets"
   TELEPORT_EC2_NODE_ROLE: "daniel-teleport-ec2-node"
   CERT_MANAGER_ROLE_ARN: "arn:aws:iam::278576220453:role/daniel-teleport-cert-manager"
+  GRAFANA_ROLE_ARN: "arn:aws:iam::278576220453:role/daniel-teleport-grafana"
 
   SECRET_PREFIX: "daniel-teleport"
   ACME_EMAIL: "daniel@dbteleport.com"

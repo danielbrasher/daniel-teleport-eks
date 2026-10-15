@@ -1,0 +1,78 @@
+# Server-side view of the Postgres backend
+# used in concert with Teleport's teleport_backend_* metrics from auth pods (client-side view)
+# to determine whether slow backend writes are Postgres-native or pool exhaustion on the Teleport side
+# separate cert + Postgres role from the Teleport role
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-exporter-dsn
+  namespace: monitoring
+stringData:
+  data-source-name: "postgresql://postgres_exporter@teleport-postgres.teleport-databases.svc.cluster.local:5432/teleport_backend?sslmode=verify-full&sslrootcert=/etc/pg-tls/ca.crt&sslcert=/etc/pg-tls/tls.crt&sslkey=/etc/pg-tls/tls.key"
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: postgres-exporter
+  namespace: monitoring
+spec:
+  interval: 1h
+  releaseName: postgres-exporter
+  timeout: 10m
+  chart:
+    spec:
+      chart: prometheus-postgres-exporter
+      version: "8.x"
+      sourceRef:
+        kind: HelmRepository
+        name: prometheus-community
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 2
+  upgrade:
+    remediation:
+      retries: 2
+      strategy: rollback
+  driftDetection:
+    mode: enabled
+
+  values:
+    fullnameOverride: postgres-exporter
+
+    config:
+      datasourceSecret:
+        name: postgres-exporter-dsn
+        key: data-source-name
+
+    serviceMonitor:
+      enabled: true
+      labels:
+        release: kube-prometheus-stack
+
+    extraVolumes:
+      - name: pg-tls
+        projected:
+          defaultMode: 0400
+          sources:
+            - secret:
+                name: postgres-exporter-client-tls
+                items:
+                  - {key: tls.crt, path: tls.crt}
+                  - {key: tls.key, path: tls.key}
+            - configMap:
+                name: teleport-postgres-server-ca
+                items:
+                  - {key: ca.crt, path: ca.crt}
+    extraVolumeMounts:
+      - name: pg-tls
+        mountPath: /etc/pg-tls
+        readOnly: true
+
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        memory: 128Mi

@@ -1,0 +1,87 @@
+# Prometheus Operator + Prometheus + Grafana + Alertmanager + node-exporter + kube-state-metrics
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kube-prometheus-stack
+  namespace: monitoring
+spec:
+  interval: 1h
+  releaseName: kube-prometheus-stack
+  timeout: 20m
+  chart:
+    spec:
+      chart: kube-prometheus-stack
+      version: "92.x"
+      sourceRef:
+        kind: HelmRepository
+        name: prometheus-community
+        namespace: flux-system
+  install:
+    crds: Create
+    remediation:
+      retries: 2
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 2
+  driftDetection:
+    mode: enabled
+
+  values:
+    prometheus:
+      prometheusSpec:
+        retention: 30d
+        podMonitorSelectorNilUsesHelmValues: false
+        serviceMonitorSelectorNilUsesHelmValues: false
+        # leaving these as empty selectors scrapes every PodMonitor and ServiceMonitor in every namespace
+        # otherwise default selector derived from Helm values would drop the teleport-cluster and teleport-discovery PodMonitors rendered by the Teleport chart
+        podMonitorNamespaceSelector: {}
+        serviceMonitorNamespaceSelector: {}
+
+        storageSpec:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: gp3
+              accessModes: ["ReadWriteOnce"]
+              resources:
+                requests:
+                  storage: 50Gi
+
+        resources:
+          requests:
+            cpu: 250m
+            memory: 2Gi
+          limits:
+            memory: 4Gi # TODO: possibly remove this and all memory limits - may just create more problems than it solves considering we can just expand resources to ensure this runs as intended
+
+    grafana:
+      serviceAccount:
+        create: true
+        name: grafana
+        annotations:
+          eks.amazonaws.com/role-arn: ${GRAFANA_ROLE_ARN}
+      # TODO: replace with an ExternalSecret (ESO)
+      adminPassword: REPLACE_ME
+
+      persistence:
+        enabled: true
+        storageClassName: gp3
+        size: 10Gi
+
+      # picks up ConfigMaps labeled grafana_dashboard=1 or grafana_datasource=1 clusterwide
+      sidecar:
+        dashboards:
+          enabled: true
+          searchNamespace: ALL
+        datasources:
+          enabled: true
+          searchNamespace: ALL
+
+      additionalDataSources:
+        # covers S3 (session recording bucket with request metrics enabled in TF to get more than daily storage metrics) and the proxy's loadbalancer
+        - name: CloudWatch
+          type: cloudwatch
+          uid: cloudwatch
+          jsonData:
+            authType: default # default = IRSA web identity on the grafana service account
+            defaultRegion: ${AWS_REGION}

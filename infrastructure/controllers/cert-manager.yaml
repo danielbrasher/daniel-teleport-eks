@@ -26,6 +26,14 @@ spec:
       name: cert-manager
       annotations:
         eks.amazonaws.com/role-arn: ${CERT_MANAGER_ROLE_ARN}
+    # monitor cert expiry and renewal failures (public proxy cert + both internal Postgres certs)
+    prometheus:
+      enabled: true
+      servicemonitor:
+        enabled: true
+        labels:
+          release: kube-prometheus-stack
+
     securityContext:
       # IRSA projects web identity token as root:1001 0440
       # without specifying 'fsGroup' below, controller runs as a different group, can't read the token, and Route53 solver fails with AccessDenied at challenge and certs never issue

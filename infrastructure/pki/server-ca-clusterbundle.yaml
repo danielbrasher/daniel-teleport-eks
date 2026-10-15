@@ -12,5 +12,9 @@ spec:
     configMap:
       key: ca.crt
     namespaceSelector:
-      matchLabels:
-        kubernetes.io/metadata.name: teleport
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: In
+          values:
+            - teleport
+            - monitoring # here so postgres_exporter can verify the Postgres server cert

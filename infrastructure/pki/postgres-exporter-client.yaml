@@ -1,0 +1,26 @@
+# postgres_exporter's client cert for the Postgres backend
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: postgres-exporter-client
+  namespace: monitoring
+spec:
+  secretName: postgres-exporter-client-tls
+  commonName: postgres_exporter
+
+  usages:
+    - client auth
+    - digital signature
+    - key encipherment
+
+  duration: 2160h # 90d
+  renewBefore: 720h # 30d
+
+  privateKey:
+    algorithm: RSA
+    size: 2048
+    rotationPolicy: Always
+
+  issuerRef:
+    name: postgres-client-ca-issuer
+    kind: ClusterIssuer

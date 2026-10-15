@@ -1,15 +1,16 @@
+# Prometheus Operator CRDs + Prometheus + Grafana
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: infra-controllers
+  name: monitoring
   namespace: flux-system
 spec:
   dependsOn:
     - name: infra-base
   interval: 30m
   retryInterval: 2m
-  timeout: 10m
-  path: ./infrastructure/controllers
+  timeout: 20m # accommodating slow first install (Prometheus and Grafana PVCs bind on WaitForFirstConsumer)
+  path: ./infrastructure/monitoring
   prune: true
   wait: true
   sourceRef:

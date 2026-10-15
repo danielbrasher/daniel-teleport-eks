@@ -18,6 +18,11 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
+  name: monitoring
+---
+apiVersion: v1
+kind: Namespace
+metadata:
   name: cert-manager
 ---
 # for demoing okta-kube-access in conjunction with Team A's RoleBinding

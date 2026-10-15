@@ -13,6 +13,11 @@ output "external_secrets_role_arn" {
   value       = aws_iam_role.external_secrets.arn
 }
 
+output "grafana_role_arn" {
+  description = "Set as GRAFANA_ROLE_ARN in infrastructure/base/cluster-vars.yaml."
+  value       = aws_iam_role.grafana.arn
+}
+
 output "cert_manager_role_arn" {
   description = "Set as CERT_MANAGER_ROLE_ARN in infrastructure/base/cluster-vars.yaml."
   value       = aws_iam_role.cert_manager.arn

@@ -58,6 +58,17 @@ variable "external_secrets_service_account" {
   default = "external-secrets"
 }
 
+variable "monitoring_namespace" {
+  type    = string
+  default = "monitoring"
+}
+
+variable "grafana_service_account" {
+  type        = string
+  default     = "grafana"
+  description = "Pinned in infrastructure/monitoring/kube-prometheus-stack.yaml > grafana.serviceAccount.name"
+}
+
 variable "cert_manager_namespace" {
   type    = string
   default = "cert-manager"
