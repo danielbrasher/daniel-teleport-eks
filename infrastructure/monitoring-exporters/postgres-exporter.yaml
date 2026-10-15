@@ -41,6 +41,9 @@ spec:
   values:
     fullnameOverride: postgres-exporter
 
+    podSecurityContext:
+      fsGroup: 1001
+
     config:
       datasourceSecret:
         name: postgres-exporter-dsn
@@ -54,7 +57,7 @@ spec:
     extraVolumes:
       - name: pg-tls
         projected:
-          defaultMode: 0444
+          defaultMode: 0440
           sources:
             - secret:
                 name: postgres-exporter-client-tls
