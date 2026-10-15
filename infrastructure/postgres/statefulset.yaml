@@ -17,6 +17,16 @@ spec:
       labels:
         app: teleport-postgres
     spec:
+      # avoiding resource contention that arose while adding multiple monitoring stack components
+      # this pins to a dedicated us-west-1c AZ nodegroup I created
+      # (bc the backend volume is pinned to the 1c AZ)
+      nodeSelector:
+        workload: postgres
+      tolerations:
+        - key: dedicated
+          operator: Equal
+          value: postgres
+          effect: NoSchedule
       securityContext:
         fsGroup: 999
         fsGroupChangePolicy: OnRootMismatch
