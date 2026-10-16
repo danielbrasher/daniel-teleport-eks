@@ -153,7 +153,6 @@ spec:
         dashboards:
           enabled: true
           searchNamespace: ALL
-          skipReload: true # avoid 401s on /api/admin/provisioning/dashboards/reload - Grafana polling the provisioning directory on a timer already as is
         datasources:
           enabled: true
           searchNamespace: ALL
