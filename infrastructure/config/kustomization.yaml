@@ -4,3 +4,4 @@ resources:
   - clustersecretstore.yaml
   - clusterissuer.yaml
   - externalsecrets-teleport.yaml
+  - externalsecrets-grafana.yaml

@@ -136,8 +136,12 @@ spec:
         name: grafana
         annotations:
           eks.amazonaws.com/role-arn: ${GRAFANA_ROLE_ARN}
-      # TODO: replace with an ExternalSecret (ESO)
-      adminPassword: REPLACE_ME
+      # credentials from Secrets Manager via ESO (infrastructure/config/externalsecrets-grafana.yaml)
+      # both keys are projected and read by the chart and dashboard sidecar
+      admin:
+        existingSecret: grafana-admin
+        userKey: admin-user
+        passwordKey: admin-password
 
       persistence:
         enabled: true
@@ -149,6 +153,7 @@ spec:
         dashboards:
           enabled: true
           searchNamespace: ALL
+          skipReload: true # avoid 401s on /api/admin/provisioning/dashboards/reload - Grafana polling the provisioning directory on a timer already as is
         datasources:
           enabled: true
           searchNamespace: ALL

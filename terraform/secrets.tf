@@ -74,3 +74,24 @@ resource "aws_secretsmanager_secret_version" "flux_github_dispatch_app_placehold
     ignore_changes = [secret_string]
   }
 }
+
+# Grafana admin credentials (for breakglass if app access goes down)
+resource "aws_secretsmanager_secret" "grafana_admin" {
+  name        = "${var.name_prefix}/grafana-admin"
+  description = "Grafana admin user and password"
+  kms_key_id  = aws_kms_key.teleport_secrets.arn
+}
+
+resource "aws_secretsmanager_secret_version" "grafana_admin_placeholder" {
+  secret_id = aws_secretsmanager_secret.grafana_admin.id
+
+  # replaced out of band
+  secret_string = jsonencode({
+    "admin-user"     = "admin"
+    "admin-password" = "REPLACE_ME"
+  })
+
+  lifecycle {
+    ignore_changes = [secret_string]
+  }
+}
