@@ -139,7 +139,7 @@ spec:
       # credentials from Secrets Manager via ESO (infrastructure/config/externalsecrets-grafana.yaml)
       # both keys are projected and read by the chart and dashboard sidecar
       admin:
-        existingSecret: grafana-admin
+        existingSecret: kube-prometheus-stack-grafana
         userKey: admin-user
         passwordKey: admin-password
 
