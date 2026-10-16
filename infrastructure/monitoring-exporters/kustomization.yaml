@@ -4,3 +4,4 @@ namespace: monitoring
 resources:
   - postgres-exporter.yaml
   - blackbox-exporter.yaml
+  - flux-podmonitor.yaml
