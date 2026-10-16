@@ -54,6 +54,12 @@ spec:
           limits:
             memory: 4Gi # TODO: possibly remove this and all memory limits - may just create more problems than it solves considering we can just expand resources to ensure this runs as intended
 
+    kube-state-metrics:
+      # needed to query join based on zone
+      # because EBS volumes are pinned to specific AZs, want to be able to see CPU headroom per zone
+      metricLabelsAllowlist:
+        - nodes=[topology.kubernetes.io/zone]    
+
     grafana:
       serviceAccount:
         create: true
