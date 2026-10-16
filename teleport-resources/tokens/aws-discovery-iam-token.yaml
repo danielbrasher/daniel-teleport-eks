@@ -16,6 +16,7 @@ spec:
   roles:
     - Discovery # joins with this token via IRSA (assumed-role/daniel-teleport-discovery)
     - Node # joins with this token via instance profile
+    - App
   allow:
     # Discovery Service pod (IRSA)
     - aws_account: ${AWS_ACCOUNT_ID_QUOTED}
