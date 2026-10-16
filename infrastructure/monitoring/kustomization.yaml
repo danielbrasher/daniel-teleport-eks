@@ -3,3 +3,14 @@ kind: Kustomization
 namespace: monitoring
 resources:
   - kube-prometheus-stack.yaml
+
+# dashboards picked up by Grafana sidecar watching for ConfigMaps labeled grafana_dashboard=1 in any namespace, TODO: restrict
+# generating from raw JSON so dash can be re-imported directly into Grafana for easier iteration
+# interpolated datasources are escaped so monitoring Kustomization's postBuild substitution doesn't replace with a zero-length string
+configMapGenerator:
+  - name: grafana-dashboard-teleport-sre
+    files:
+      - teleport-sre.json=dashboards/teleport-sre.json
+    options:
+      labels:
+        grafana_dashboard: "1"
