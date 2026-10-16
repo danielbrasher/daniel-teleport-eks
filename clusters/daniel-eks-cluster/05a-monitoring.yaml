@@ -6,7 +6,7 @@ metadata:
   namespace: flux-system
 spec:
   dependsOn:
-    - name: infra-base
+    - name: infra-config
   interval: 30m
   retryInterval: 2m
   timeout: 20m # accommodating slow first install (Prometheus and Grafana PVCs bind on WaitForFirstConsumer)

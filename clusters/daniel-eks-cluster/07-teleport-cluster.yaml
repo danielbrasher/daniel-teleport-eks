@@ -9,6 +9,7 @@ spec:
     - name: infra-config
     - name: infra-pki
     - name: postgres
+    - name: monitoring
   interval: 30m
   retryInterval: 2m
   timeout: 20m

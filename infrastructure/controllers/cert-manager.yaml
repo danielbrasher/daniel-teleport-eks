@@ -30,9 +30,7 @@ spec:
     prometheus:
       enabled: true
       servicemonitor:
-        enabled: true
-        labels:
-          release: kube-prometheus-stack
+        enabled: false # false bc this release reconciles before the monitoring stack (so no CRD yet)
 
     securityContext:
       # IRSA projects web identity token as root:1001 0440

@@ -5,3 +5,4 @@ resources:
   - postgres-exporter.yaml
   - blackbox-exporter.yaml
   - flux-podmonitor.yaml
+  - cert-manager-servicemonitor.yaml

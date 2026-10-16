@@ -5,8 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   dependsOn:
-    - name: infra-base
-    - name: monitoring # need ServiceMonitor CRD before cert-manager can render it
+    - name: infra-base # need ServiceMonitor CRD before cert-manager can render it
   interval: 30m
   retryInterval: 2m
   timeout: 10m
