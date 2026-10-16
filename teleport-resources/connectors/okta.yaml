@@ -22,3 +22,6 @@ spec:
     - name: groups
       value: teleport-servicenow-users
       roles: ["okta-prod-ssh-requester"]
+    - name: groups
+      value: teleport-monitoring
+      roles: ["okta-grafana-access"]

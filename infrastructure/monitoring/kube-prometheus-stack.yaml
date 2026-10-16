@@ -153,9 +153,30 @@ spec:
         dashboards:
           enabled: true
           searchNamespace: ALL
+          skipReload: true # avoid 401s on /api/admin/provisioning/dashboards/reload - Grafana polling the provisioning directory on a timer already as is
         datasources:
           enabled: true
           searchNamespace: ALL
+
+      # Grafana behind Teleport app access
+      # proxy injects a signed JWT on every request, Grafana verifies it against cluster's JWKS and signs the user in
+      # local admin login is left enabled as break-glass
+      grafana.ini:
+        server:
+          root_url: https://grafana.${TELEPORT_CLUSTER_NAME}
+        auth:
+          disable_login_form: false
+        auth.jwt:
+          enabled: true
+          header_name: Teleport-Jwt-Assertion
+          username_claim: sub
+          email_claim: sub
+          jwk_set_url: https://${TELEPORT_CLUSTER_NAME}/.well-known/jwks.json
+          auto_sign_up: true
+          cache_ttl: 60m
+          # Grafana permissions follow Teleport RBAC via roles claim (carries user's Teleport roles)
+          role_attribute_path: contains(roles[*], 'okta-grafana-admin') && 'Admin' || contains(roles[*], 'okta-grafana-access') && 'Editor' || 'Viewer'
+          role_attribute_strict: false
 
       additionalDataSources:
         # covers S3 (session recording bucket with request metrics enabled in TF to get more than daily storage metrics) and the proxy's loadbalancer

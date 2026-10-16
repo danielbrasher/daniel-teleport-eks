@@ -1,4 +1,4 @@
-roles: discovery
+roles: discovery,app
 proxyAddr: teleport-eks.dbteleport.com:443
 kubeClusterName: daniel-eks-cluster
 enterprise: true
@@ -15,6 +15,12 @@ annotations:
     eks.amazonaws.com/role-arn: arn:aws:iam::278576220453:role/daniel-teleport-discovery
 
 kubernetesDiscovery: [] # not auto-discovering Kubernetes Services as apps # TODO: revisit for demo
+
+apps:
+  - name: grafana
+    uri: http://kube-prometheus-stack-grafana.monitoring.svc.cluster.local:80
+    labels:
+      group: metrics
 
 teleportConfig:
   discovery_service:
