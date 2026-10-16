@@ -159,6 +159,7 @@ data "aws_iam_policy_document" "external_secrets" {
       aws_secretsmanager_secret.license.arn,
       aws_secretsmanager_secret.flux_github_app.arn,
       aws_secretsmanager_secret.flux_github_dispatch_app.arn,
+      aws_secretsmanager_secret.grafana_admin.arn,
     ]
   }
 
