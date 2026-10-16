@@ -1,0 +1,11 @@
+apiVersion: resources.teleport.dev/v1
+kind: TeleportRoleV8
+metadata:
+  name: okta-grafana-access
+  namespace: teleport
+spec:
+  allow:
+    app_labels:
+      group: ["metrics"] # currently just Grafana
+  options:
+    max_session_ttl: 8h
