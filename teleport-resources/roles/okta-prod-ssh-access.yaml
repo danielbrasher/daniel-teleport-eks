@@ -1,0 +1,15 @@
+# used to demonstrate expanded ServiceNow access request plugin
+apiVersion: resources.teleport.dev/v1
+kind: TeleportRoleV8
+metadata:
+  name: okta-prod-ssh-access
+  namespace: teleport
+spec:
+  allow:
+    logins: ["{{email.local(external.username)}}"]
+    node_labels:
+      aws/env: ["prod"]
+  options:
+    create_host_user_mode: keep
+    create_host_user_default_shell: /bin/bash
+    max_session_ttl: 4h

@@ -7,7 +7,7 @@ spec:
   allow:
     kubernetes_labels:
       env: ["dev"]
-    kubernetes_groups: ["k8s-dev-{{external.team}}"]
+    kubernetes_groups: ["teleport-team-edit"]
     kubernetes_users: ["{{email.local(external.username)}}"]
     kubernetes_resources:
       - kind: "*"
