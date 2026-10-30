@@ -11,7 +11,7 @@ data:
   TELEPORT_CLUSTER_NAME: "teleport-eks.dbteleport.com"
 
   # pin teleport-agents and teleport-cluster chart version (+binary version as currently configured)
-  TELEPORT_VERSION: "18.11.0"
+  TELEPORT_VERSION: "18.11.7" # 2026-10-30 mitigate CVE-2026-111943 (eMudhra Intermediate CA Compromise)
 
   TELEPORT_AUTH_ROLE_ARN: "arn:aws:iam::278576220453:role/daniel-teleport-auth"
   TELEPORT_DISCOVERY_ROLE_ARN: "arn:aws:iam::278576220453:role/daniel-teleport-discovery"
