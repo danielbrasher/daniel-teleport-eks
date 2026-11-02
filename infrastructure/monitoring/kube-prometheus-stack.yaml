@@ -183,6 +183,18 @@ spec:
           role_attribute_path: contains(roles[*], 'okta-grafana-admin') && 'Admin' || contains(roles[*], 'okta-grafana-access') && 'Editor' || 'Viewer'
           role_attribute_strict: false
 
+      # client cert and server CA for the Teleport Audit datasource below
+      extraSecretMounts:
+        - name: pg-client-tls
+          secretName: grafana-audit-client-tls
+          mountPath: /etc/pg-tls/client
+          readOnly: true
+      extraConfigmapMounts:
+        - name: pg-server-ca
+          configMap: teleport-postgres-server-ca
+          mountPath: /etc/pg-tls/ca
+          readOnly: true
+
       additionalDataSources:
         # covers S3 (session recording bucket with request metrics enabled in TF to get more than daily storage metrics) and the proxy's loadbalancer
         - name: CloudWatch
@@ -191,3 +203,22 @@ spec:
           jsonData:
             authType: default # default = IRSA web identity on the grafana service account
             defaultRegion: ${AWS_REGION}
+
+        - name: Teleport Audit
+          type: postgres
+          uid: teleport-audit
+          url: teleport-postgres.teleport-databases.svc.cluster.local:5432
+          database: teleport_audit
+          user: grafana_audit
+          jsonData:
+            sslmode: verify-full
+            tlsAuth: true
+            tlsAuthWithCACert: true
+            postgresVersion: 1600
+            maxOpenConns: 5 # kept low on purpose - don't starve more important processes of connections
+            maxIdleConns: 2
+            connMaxLifetime: 14400
+          secureJsonData:
+            tlsCACert: $__file{/etc/pg-tls/ca/ca.crt}
+            tlsClientCert: $__file{/etc/pg-tls/client/tls.crt}
+            tlsClientKey: $__file{/etc/pg-tls/client/tls.key}

@@ -1,0 +1,28 @@
+# Grafana's read-only client cert for the Teleport audit database
+# dash queries the Teleport audit log table in Postgres directly through Grafana Postgres datasource
+# (obviates need for event-handler or log pipeline)
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: grafana-audit-client
+  namespace: monitoring
+spec:
+  secretName: grafana-audit-client-tls
+  commonName: grafana_audit
+
+  usages:
+    - client auth
+    - digital signature
+    - key encipherment
+
+  duration: 2160h # 90d
+  renewBefore: 720h # 30d
+
+  privateKey:
+    algorithm: RSA
+    size: 2048
+    rotationPolicy: Always
+
+  issuerRef:
+    name: postgres-client-ca-issuer
+    kind: ClusterIssuer
