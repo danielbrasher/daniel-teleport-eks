@@ -212,13 +212,11 @@ spec:
           jsonData:
             database: teleport_audit
             sslmode: verify-full
-            tlsAuth: true
-            tlsAuthWithCACert: true
+            tlsConfigurationMethod: file-path
+            sslRootCertFile: /etc/pg-tls/ca/ca.crt
+            sslCertFile: /etc/pg-tls/client/tls.crt
+            sslKeyFile: /etc/pg-tls/client/tls.key
             postgresVersion: 1600
             maxOpenConns: 5 # kept low on purpose - don't starve more important processes of connections
             maxIdleConns: 2
             connMaxLifetime: 14400
-          secureJsonData:
-            tlsCACert: $__file{/etc/pg-tls/ca/ca.crt}
-            tlsClientCert: $__file{/etc/pg-tls/client/tls.crt}
-            tlsClientKey: $__file{/etc/pg-tls/client/tls.key}
