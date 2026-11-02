@@ -210,7 +210,12 @@ kubectl -n teleport-databases exec teleport-postgres-0 -- psql -U postgres \
   -c "CREATE DATABASE teleport_backend OWNER teleport" \
   -c "CREATE DATABASE teleport_audit OWNER teleport" \
   -c "CREATE ROLE postgres_exporter WITH LOGIN" \
-  -c "GRANT pg_monitor TO postgres_exporter"
+  -c "GRANT pg_monitor TO postgres_exporter" \
+  -c "CREATE ROLE grafana_audit LOGIN" \
+  -c "GRANT CONNECT ON DATABASE teleport_audit TO grafana_audit" \
+  -c '\c teleport_audit' \
+  -c "GRANT USAGE ON SCHEMA public TO grafana_audit" \
+  -c "ALTER DEFAULT PRIVILEGES FOR ROLE teleport IN SCHEMA public GRANT SELECT ON TABLES TO grafana_audit"
 ```
 
 ### 7. Point DNS at the proxy
