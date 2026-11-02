@@ -7,7 +7,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 7,
+  "version": 24,
   "refresh": "1m",
   "time": {
     "from": "now-6h",
@@ -32,17 +32,18 @@
     "list": [
       {
         "name": "Flux not ready",
-        "enable": true,
+        "enable": false,
         "iconColor": "red",
         "datasource": {
           "type": "prometheus",
-          "uid": "$${datasource}"
+          "uid": "${datasource}"
         },
         "expr": "gotk_resource_info{ready=\"False\"} == 1",
         "titleFormat": "Flux: {{customresource_kind}}/{{name}} not ready",
         "textFormat": "namespace {{exported_namespace}}",
         "step": "1m",
-        "useValueForTime": false
+        "useValueForTime": false,
+        "hide": false
       },
       {
         "name": "All Flux reconciles (noisy)",
@@ -51,7 +52,7 @@
         "iconColor": "purple",
         "datasource": {
           "type": "prometheus",
-          "uid": "$${datasource}"
+          "uid": "${datasource}"
         },
         "expr": "changes(gotk_reconcile_duration_seconds_count{customresource_kind=\"Kustomization\"}[5m]) > 0",
         "titleFormat": "Flux reconcile",
@@ -77,11 +78,11 @@
     {
       "id": 101,
       "type": "stat",
-      "title": "Proxy reachable",
-      "description": "Blackbox probe to the public proxy URL",
+      "title": "Proxy",
+      "description": "Blackbox probe to the public proxy URL. The only check that reflects what a user experiences.",
       "datasource": {
         "type": "prometheus",
-        "uid": "$${datasource}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 3,
@@ -93,7 +94,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "min(probe_success)",
@@ -122,12 +123,12 @@
               "type": "value",
               "options": {
                 "0": {
-                  "text": "DOWN",
+                  "text": "Unreachable",
                   "color": "red",
                   "index": 0
                 },
                 "1": {
-                  "text": "UP",
+                  "text": "Reachable",
                   "color": "green",
                   "index": 1
                 }
@@ -155,11 +156,11 @@
     {
       "id": 102,
       "type": "stat",
-      "title": "Teleport up",
-      "description": "Auth and Proxy scrape targets",
+      "title": "Teleport targets responding",
+      "description": "Scrape targets answering, over the number that exist. Colour is percentage-based, so it stays correct as replicas change.",
       "datasource": {
         "type": "prometheus",
-        "uid": "$${datasource}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 3,
@@ -171,13 +172,24 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "min(up{job=~\".*teleport.*\"})",
-          "legendFormat": "__auto",
+          "expr": "sum(up{job=~\".*teleport.*\"})",
+          "legendFormat": "responding",
           "range": true,
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "count(up{job=~\".*teleport.*\"})",
+          "legendFormat": "max",
+          "range": true,
+          "refId": "C"
         }
       ],
       "options": {
@@ -190,30 +202,16 @@
         },
         "colorMode": "background",
         "graphMode": "none",
-        "textMode": "auto"
+        "textMode": "value",
+        "justifyMode": "auto",
+        "orientation": "auto"
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none",
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "text": "DOWN",
-                  "color": "red",
-                  "index": 0
-                },
-                "1": {
-                  "text": "UP",
-                  "color": "green",
-                  "index": 1
-                }
-              }
-            }
-          ],
+          "unit": "suffix: / 6",
+          "mappings": [],
           "thresholds": {
-            "mode": "absolute",
+            "mode": "percentage",
             "steps": [
               {
                 "color": "red",
@@ -221,23 +219,43 @@
               },
               {
                 "color": "green",
-                "value": 1
+                "value": 100
               }
             ]
           },
-          "noValue": "0"
+          "noValue": "0",
+          "min": 0,
+          "decimals": 0
         },
         "overrides": []
-      }
+      },
+      "transformations": [
+        {
+          "id": "configFromData",
+          "options": {
+            "configRefId": "C",
+            "mappings": [
+              {
+                "fieldName": "max",
+                "handlerKey": "max"
+              }
+            ],
+            "applyTo": {
+              "id": "byType",
+              "options": "number"
+            }
+          }
+        }
+      ]
     },
     {
       "id": 103,
       "type": "stat",
-      "title": "Postgres reachable",
-      "description": "postgres_exporter's own connection independent of Teleport's view",
+      "title": "Postgres",
+      "description": "postgres_exporter's own connection - independent of Teleport's view.",
       "datasource": {
         "type": "prometheus",
-        "uid": "$${datasource}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 3,
@@ -249,7 +267,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "min(pg_up)",
@@ -278,12 +296,12 @@
               "type": "value",
               "options": {
                 "0": {
-                  "text": "DOWN",
+                  "text": "Down",
                   "color": "red",
                   "index": 0
                 },
                 "1": {
-                  "text": "UP",
+                  "text": "Up",
                   "color": "green",
                   "index": 1
                 }
@@ -311,11 +329,11 @@
     {
       "id": 104,
       "type": "stat",
-      "title": "Flux not ready",
-      "description": "Kustomizations and HelmReleases failing to reconcile",
+      "title": "Flux resources synced",
+      "description": "Flux resources matching Git. Below 100% means your changes are not landing.",
       "datasource": {
         "type": "prometheus",
-        "uid": "$${datasource}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 3,
@@ -327,10 +345,105 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(gotk_resource_info{ready=\"False\"}) or vector(0)",
+          "expr": "sum(gotk_resource_info{ready=\"True\"})",
+          "legendFormat": "synced",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(gotk_resource_info)",
+          "legendFormat": "max",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: / 26",
+          "mappings": [],
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 100
+              }
+            ]
+          },
+          "noValue": "0",
+          "min": 0,
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "transformations": [
+        {
+          "id": "configFromData",
+          "options": {
+            "configRefId": "C",
+            "mappings": [
+              {
+                "fieldName": "max",
+                "handlerKey": "max"
+              }
+            ],
+            "applyTo": {
+              "id": "byType",
+              "options": "number"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 106,
+      "type": "stat",
+      "title": "Login latency (p99)",
+      "description": "Time to issue a user certificate - what a person feels running tsh login. Rises under demand before anything else here.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 0,
+        "y": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(auth_generate_seconds_bucket[5m])))",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -350,7 +463,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none",
+          "unit": "s",
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -360,8 +473,12 @@
                 "value": null
               },
               {
-                "color": "red",
+                "color": "yellow",
                 "value": 1
+              },
+              {
+                "color": "red",
+                "value": 3
               }
             ]
           },
@@ -373,23 +490,23 @@
     {
       "id": 105,
       "type": "stat",
-      "title": "Backend write p99",
-      "description": "Cluster-state writes only",
+      "title": "Backend write latency (p99)",
+      "description": "Cluster-state writes only. component=backend excludes the in-memory cache, which would hide real latency.",
       "datasource": {
         "type": "prometheus",
-        "uid": "$${datasource}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 3,
         "w": 6,
-        "x": 0,
+        "x": 6,
         "y": 4
       },
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.99, sum by (le) (rate(backend_write_seconds_bucket{component=\"backend\"}[5m])))",
@@ -437,79 +554,13 @@
       }
     },
     {
-      "id": 106,
-      "type": "stat",
-      "title": "Audit write p99",
-      "description": "The audit-log path to Postgres, separate from cluster state",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "$${datasource}"
-      },
-      "gridPos": {
-        "h": 3,
-        "w": 6,
-        "x": 6,
-        "y": 4
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "$${datasource}"
-          },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(teleport_postgres_events_backend_write_seconds_bucket[5m])))",
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "background",
-        "graphMode": "none",
-        "textMode": "auto"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 0.2
-              },
-              {
-                "color": "red",
-                "value": 1
-              }
-            ]
-          },
-          "noValue": "0"
-        },
-        "overrides": []
-      }
-    },
-    {
       "id": 107,
       "type": "stat",
-      "title": "Audit emit failures",
-      "description": "Events Teleport couldn't write",
+      "title": "Failed audit event writes (1h)",
+      "description": "Audit events Teleport could not write, counted over the preceding hour. Any non-zero value means records were lost.",
       "datasource": {
         "type": "prometheus",
-        "uid": "$${datasource}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 3,
@@ -521,10 +572,10 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(rate(audit_failed_emit_events[5m])) or vector(0)",
+          "expr": "sum(increase(audit_failed_emit_events[1h])) or vector(0)",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -544,7 +595,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none",
+          "unit": "short",
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -559,7 +610,8 @@
               }
             ]
           },
-          "noValue": "0"
+          "noValue": "0",
+          "decimals": 0
         },
         "overrides": []
       }
@@ -567,11 +619,11 @@
     {
       "id": 108,
       "type": "stat",
-      "title": "Incomplete uploads",
-      "description": "Session recordings that started but never finished uploading to S3",
+      "title": "Pending session recording uploads",
+      "description": "Recordings whose upload has not completed. In-flight uploads count too, so brief non-zero is normal; sustained is not.",
       "datasource": {
         "type": "prometheus",
-        "uid": "$${datasource}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 3,
@@ -583,7 +635,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum(teleport_incomplete_session_uploads_total) or vector(0)",
@@ -606,7 +658,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none",
+          "unit": "short",
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -616,8 +668,12 @@
                 "value": null
               },
               {
-                "color": "red",
+                "color": "yellow",
                 "value": 1
+              },
+              {
+                "color": "red",
+                "value": 3
               }
             ]
           },
@@ -630,10 +686,10 @@
       "id": 109,
       "type": "stat",
       "title": "Time to soonest cert expiry",
-      "description": "Soonest expiry across all cert-manager Certificates, including internal Postgres certs",
+      "description": "Soonest expiry across all cert-manager Certificates, including internal Postgres certs.",
       "datasource": {
         "type": "prometheus",
-        "uid": "$${datasource}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 3,
@@ -645,7 +701,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "min(certmanager_certificate_expiration_timestamp_seconds - time()) / 86400",
@@ -695,11 +751,11 @@
     {
       "id": 110,
       "type": "stat",
-      "title": "Pending pods",
-      "description": "Anything unschedulable or not yet scheduled",
+      "title": "Pods awaiting scheduling",
+      "description": "Anything unschedulable. Non-zero here preceded the Postgres outage during buildout.",
       "datasource": {
         "type": "prometheus",
-        "uid": "$${datasource}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 3,
@@ -711,7 +767,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum(kube_pod_status_phase{phase=\"Pending\"}) or vector(0)",
@@ -734,7 +790,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none",
+          "unit": "short",
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -757,11 +813,11 @@
     {
       "id": 111,
       "type": "stat",
-      "title": "Worst-AZ CPU headroom",
-      "description": "Cores free on the roomiest node in the tightest AZ",
+      "title": "Largest CPU request that fits in every AZ",
+      "description": "Free cores on the roomiest node in the tightest AZ. EBS volumes are AZ-pinned, so cluster-wide headroom misleads. Thresholds assume 250m Teleport pods.",
       "datasource": {
         "type": "prometheus",
-        "uid": "$${datasource}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 3,
@@ -773,7 +829,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "min(\n  max by (label_topology_kubernetes_io_zone) (\n  (\n    sum by (node) (kube_node_status_allocatable{resource=\"cpu\"})\n    - sum by (node) (kube_pod_container_resource_requests{resource=\"cpu\"})\n  ) * on (node) group_left(label_topology_kubernetes_io_zone)\n  max by (node, label_topology_kubernetes_io_zone) (kube_node_labels)\n)\n)",
@@ -796,7 +852,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none",
+          "unit": "suffix:cores",
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -807,11 +863,11 @@
               },
               {
                 "color": "yellow",
-                "value": 0.5
+                "value": 0.25
               },
               {
                 "color": "green",
-                "value": 1
+                "value": 0.5
               }
             ]
           },
@@ -823,11 +879,11 @@
     {
       "id": 112,
       "type": "stat",
-      "title": "Postgres connections",
-      "description": "Against max_connections=200",
+      "title": "Postgres connections in use",
+      "description": "Connections against max_connections, both read from Postgres. Pool exhaustion shows as Teleport write latency against an idle-looking database.",
       "datasource": {
         "type": "prometheus",
-        "uid": "$${datasource}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 3,
@@ -839,13 +895,24 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum(pg_stat_database_numbackends)",
-          "legendFormat": "__auto",
+          "legendFormat": "in use",
           "range": true,
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "max(pg_settings_max_connections)",
+          "legendFormat": "max",
+          "range": true,
+          "refId": "C"
         }
       ],
       "options": {
@@ -858,14 +925,16 @@
         },
         "colorMode": "background",
         "graphMode": "none",
-        "textMode": "auto"
+        "textMode": "value",
+        "justifyMode": "auto",
+        "orientation": "auto"
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none",
+          "unit": "suffix: / 200",
           "mappings": [],
           "thresholds": {
-            "mode": "absolute",
+            "mode": "percentage",
             "steps": [
               {
                 "color": "green",
@@ -873,18 +942,38 @@
               },
               {
                 "color": "yellow",
-                "value": 140
+                "value": 70
               },
               {
                 "color": "red",
-                "value": 180
+                "value": 90
               }
             ]
           },
-          "noValue": "0"
+          "noValue": "0",
+          "min": 0,
+          "decimals": 0
         },
         "overrides": []
-      }
+      },
+      "transformations": [
+        {
+          "id": "configFromData",
+          "options": {
+            "configRefId": "C",
+            "mappings": [
+              {
+                "fieldName": "max",
+                "handlerKey": "max"
+              }
+            ],
+            "applyTo": {
+              "id": "byType",
+              "options": "number"
+            }
+          }
+        }
+      ]
     },
     {
       "id": 113,
@@ -902,11 +991,11 @@
     {
       "id": 114,
       "type": "timeseries",
-      "title": "CPU requests vs allocatable, by node",
-      "description": "Requests drive scheduling.",
+      "title": "CPU requested vs allocatable, by node",
+      "description": "Solid lines are requests, grey dashed are each node's ceiling. Requests drive scheduling - a node can be 90% requested and nearly idle.",
       "datasource": {
         "type": "prometheus",
-        "uid": "$${datasource}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 8,
@@ -918,7 +1007,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum by (node) (kube_pod_container_resource_requests{resource=\"cpu\"})",
@@ -929,7 +1018,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum by (node) (kube_node_status_allocatable{resource=\"cpu\"})",
@@ -955,26 +1044,61 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none",
+          "unit": "short",
           "custom": {
             "drawStyle": "line",
             "lineWidth": 2,
             "fillOpacity": 8,
             "showPoints": "never",
-            "spanNulls": true
+            "spanNulls": true,
+            "axisLabel": "CPU cores"
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*allocatable"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    10,
+                    10
+                  ]
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 1
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8e8e8e"
+                }
+              }
+            ]
+          }
+        ]
       }
     },
     {
       "id": 115,
       "type": "timeseries",
       "title": "Schedulable CPU headroom, by zone",
-      "description": "Roomiest node in each AZ, in free cores",
+      "description": "Per-AZ free cores. A pod with an existing PV can only use headroom in its own zone.",
       "datasource": {
         "type": "prometheus",
-        "uid": "$${datasource}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 8,
@@ -986,7 +1110,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "max by (label_topology_kubernetes_io_zone) (\n  (\n    sum by (node) (kube_node_status_allocatable{resource=\"cpu\"})\n    - sum by (node) (kube_pod_container_resource_requests{resource=\"cpu\"})\n  ) * on (node) group_left(label_topology_kubernetes_io_zone)\n  max by (node, label_topology_kubernetes_io_zone) (kube_node_labels)\n)",
@@ -1012,13 +1136,14 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none",
+          "unit": "short",
           "custom": {
             "drawStyle": "line",
             "lineWidth": 2,
             "fillOpacity": 8,
             "showPoints": "never",
-            "spanNulls": true
+            "spanNulls": true,
+            "axisLabel": "spare CPU cores"
           }
         },
         "overrides": []
@@ -1028,10 +1153,10 @@
       "id": 116,
       "type": "timeseries",
       "title": "Pending pods by namespace",
-      "description": "Sustained non-zero means unschedulable, not starting",
+      "description": "Total is a grey dashed reference line that is always present, so a flat zero means 'measured, nothing wrong'.",
       "datasource": {
         "type": "prometheus",
-        "uid": "$${datasource}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 7,
@@ -1043,7 +1168,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum(kube_pod_status_phase{phase=\"Pending\"}) or vector(0)",
@@ -1054,7 +1179,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum by (namespace) (kube_pod_status_phase{phase=\"Pending\"}) > 0",
@@ -1080,13 +1205,14 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none",
+          "unit": "short",
           "custom": {
             "drawStyle": "line",
             "lineWidth": 2,
             "fillOpacity": 8,
             "showPoints": "never",
-            "spanNulls": true
+            "spanNulls": true,
+            "axisLabel": "pods"
           }
         },
         "overrides": [
@@ -1130,10 +1256,10 @@
       "id": 117,
       "type": "timeseries",
       "title": "Restarts and OOMKills (1h rolling)",
-      "description": "Distinguishes crash loops from memory pressure",
+      "description": "Crash loops versus memory pressure. The 1h window is fixed in the query, not the time picker.",
       "datasource": {
         "type": "prometheus",
-        "uid": "$${datasource}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 7,
@@ -1145,7 +1271,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum(increase(kube_pod_container_status_restarts_total[1h])) or vector(0)",
@@ -1156,7 +1282,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum by (namespace, pod) (increase(kube_pod_container_status_restarts_total[1h])) > 0",
@@ -1167,7 +1293,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum by (namespace, pod) (kube_pod_container_status_last_terminated_reason{reason=\"OOMKilled\"}) > 0",
@@ -1193,13 +1319,14 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none",
+          "unit": "short",
           "custom": {
             "drawStyle": "line",
             "lineWidth": 2,
             "fillOpacity": 8,
             "showPoints": "never",
-            "spanNulls": true
+            "spanNulls": true,
+            "axisLabel": "restarts in preceding hour"
           }
         },
         "overrides": [
@@ -1240,9 +1367,9 @@
       }
     },
     {
-      "id": 118,
+      "id": 500,
       "type": "row",
-      "title": "Backend",
+      "title": "Demand",
       "collapsed": false,
       "gridPos": {
         "h": 1,
@@ -1253,17 +1380,17 @@
       "panels": []
     },
     {
-      "id": 119,
+      "id": 701,
       "type": "timeseries",
-      "title": "Teleport: cluster-state backend",
-      "description": "Client-side cluster state",
+      "title": "Arriving demand",
+      "description": "Work arriving per second. Certificate issuance counts logins; authenticated connections includes reconnects and non-login traffic.",
       "datasource": {
         "type": "prometheus",
-        "uid": "$${datasource}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
+        "w": 8,
         "x": 0,
         "y": 27
       },
@@ -1271,7 +1398,945 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(auth_generate_seconds_count[5m]))",
+          "legendFormat": "certificates issued/sec",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(teleport_authenticated_accepted_connections_total[5m]))",
+          "legendFormat": "authenticated connections/sec",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisLabel": ""
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 702,
+      "type": "timeseries",
+      "title": "Concurrent sessions",
+      "description": "Sessions existing right now. Proxy count includes commands, scp and port-forwards; interactive counts only sessions with a shell attached.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 27
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(proxy_ssh_sessions_total)",
+          "legendFormat": "SSH sessions (via proxy)",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(server_interactive_sessions_total)",
+          "legendFormat": "interactive sessions (with a shell)",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisLabel": "sessions"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 502,
+      "type": "timeseries",
+      "title": "Login latency and failures",
+      "description": "p50 rising means everyone is slower; p99 alone means a suffering tail. Failures flat with latency climbing is capacity, not auth.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 27
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(auth_generate_seconds_bucket[5m])))",
+          "legendFormat": "login p99",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(auth_generate_seconds_bucket[5m])))",
+          "legendFormat": "login p50",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(failed_login_attempts_total[5m]))",
+          "legendFormat": "failed logins/sec",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisLabel": ""
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "failed logins/sec"
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "unit",
+                "value": "reqps"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    6
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 503,
+      "type": "timeseries",
+      "title": "Fleet and registered resources",
+      "description": "Adoption as estate rather than people. Missing tunnels are agents that should be connected and are not.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 35
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(teleport_reverse_tunnels_connected)",
+          "legendFormat": "agents connected (reverse tunnels)",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(teleport_services)",
+          "legendFormat": "registered services",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(proxy_missing_ssh_tunnels)",
+          "legendFormat": "MISSING tunnels",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisLabel": "count"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 504,
+      "type": "timeseries",
+      "title": "Demand exceeding limits",
+      "description": "Demand that was refused rather than served. Any sustained value is users being turned away.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 35
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(proxy_connection_limit_exceeded_total[5m]))",
+          "legendFormat": "proxy connection limit hit/sec",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(teleport_alpn_proxy_connection_limit_exceeded_total[5m]))",
+          "legendFormat": "ALPN limit hit/sec",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(user_max_concurrent_sessions_hit_total[5m]))",
+          "legendFormat": "user session limit hit/sec",
+          "range": true,
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(failed_connect_to_node_attempts_total[5m]))",
+          "legendFormat": "failed node connections/sec",
+          "range": true,
+          "refId": "D"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisLabel": ""
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 505,
+      "type": "timeseries",
+      "title": "Proxy throughput",
+      "description": "Volume through the proxy. Two users moving files and two hundred idle shells look identical by session count and nothing alike here.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 35
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(rx[5m]))",
+          "legendFormat": "received",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(tx[5m]))",
+          "legendFormat": "transmitted",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisLabel": ""
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 506,
+      "type": "timeseries",
+      "title": "Demand vs backend work",
+      "description": "Backend work per unit of demand. Writes climbing faster than issuance means something other than logins drives the backend.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 42
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(auth_generate_seconds_count[5m]))",
+          "legendFormat": "certificates issued/sec",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(teleport_backend_writes_total[5m]))",
+          "legendFormat": "backend writes/sec",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(teleport_backend_reads_total[5m]))",
+          "legendFormat": "backend reads/sec",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisLabel": ""
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 820,
+      "type": "timeseries",
+      "title": "CPU used vs demand",
+      "description": "Cores CONSUMED, against sessions. The Capacity row shows cores REQUESTED - the gap between them is where right-sizing lives.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 42
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"teleport\", container!=\"\"}[5m]))",
+          "legendFormat": "CPU cores used",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(proxy_ssh_sessions_total)",
+          "legendFormat": "SSH sessions",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(server_interactive_sessions_total)",
+          "legendFormat": "interactive sessions",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisLabel": "CPU cores"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sessions"
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "sessions"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    6
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 821,
+      "type": "timeseries",
+      "title": "Memory used vs demand",
+      "description": "Expect memory NOT to track sessions: Teleport's footprint is dominated by its cache of cluster state, which scales with estate rather than traffic.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 42
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(container_memory_working_set_bytes{namespace=\"teleport\", container!=\"\"})",
+          "legendFormat": "working set",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(proxy_ssh_sessions_total)",
+          "legendFormat": "SSH sessions",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(server_interactive_sessions_total)",
+          "legendFormat": "interactive sessions",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisLabel": ""
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sessions"
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "sessions"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    6
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 801,
+      "type": "timeseries",
+      "title": "Backend cost per session",
+      "description": "Flat under rising demand means linear scaling - buy capacity. Rising means each session costs more than it did, which capacity will not fix.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 0,
+        "y": 50
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(teleport_backend_writes_total[5m])) / clamp_min(sum(proxy_ssh_sessions_total),1)",
+          "legendFormat": "backend writes",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(teleport_audit_emit_events[5m])) / clamp_min(sum(proxy_ssh_sessions_total),1)",
+          "legendFormat": "audit events",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisLabel": "ops/sec per session"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 802,
+      "type": "timeseries",
+      "title": "Data transfer per session",
+      "description": "Rising here with flat session counts means sessions are getting heavier - file transfers rather than shells.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 12,
+        "y": 50
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(tx[5m])) / clamp_min(sum(proxy_ssh_sessions_total),1)",
+          "legendFormat": "transmitted",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(rx[5m])) / clamp_min(sum(proxy_ssh_sessions_total),1)",
+          "legendFormat": "received",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisLabel": ""
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 118,
+      "type": "row",
+      "title": "Backend",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 56
+      },
+      "panels": []
+    },
+    {
+      "id": 119,
+      "type": "timeseries",
+      "title": "Teleport: cluster-state backend",
+      "description": "Write conflicts are compare-and-swap retries when two writers hit the same key. Conflicts rising with flat latency is lock churn.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 57
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.99, sum by (le) (rate(backend_write_seconds_bucket{component=\"backend\"}[5m])))",
@@ -1282,7 +2347,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.99, sum by (le) (rate(backend_read_seconds_bucket{component=\"backend\"}[5m])))",
@@ -1293,7 +2358,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.99, sum by (le) (rate(backend_batch_read_seconds_bucket{component=\"backend\"}[5m])))",
@@ -1304,11 +2369,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum(rate(teleport_backend_atomic_write_contention[5m]))",
-          "legendFormat": "CAS contention/s",
+          "legendFormat": "write conflicts",
           "range": true,
           "refId": "D"
         }
@@ -1336,32 +2401,60 @@
             "lineWidth": 2,
             "fillOpacity": 8,
             "showPoints": "never",
-            "spanNulls": true
+            "spanNulls": true,
+            "axisLabel": ""
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "write conflicts"
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "unit",
+                "value": "reqps"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    6
+                  ]
+                }
+              }
+            ]
+          }
+        ]
       }
     },
     {
       "id": 120,
       "type": "timeseries",
       "title": "Teleport: audit events to Postgres",
-      "description": "Audit log path, separate from cluster state",
+      "description": "The audit path, separate from cluster state. Divergence from the panel beside it localises which half is struggling.",
       "datasource": {
         "type": "prometheus",
-        "uid": "$${datasource}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 27
+        "y": 57
       },
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.99, sum by (le) (rate(teleport_postgres_events_backend_write_seconds_bucket[5m])))",
@@ -1372,7 +2465,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.99, sum by (le) (rate(teleport_postgres_events_backend_batch_read_seconds_bucket[5m])))",
@@ -1383,7 +2476,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum(rate(teleport_postgres_events_backend_write_requests[5m]))",
@@ -1415,32 +2508,60 @@
             "lineWidth": 2,
             "fillOpacity": 8,
             "showPoints": "never",
-            "spanNulls": true
+            "spanNulls": true,
+            "axisLabel": ""
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "audit writes/s"
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "unit",
+                "value": "reqps"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    6
+                  ]
+                }
+              }
+            ]
+          }
+        ]
       }
     },
     {
       "id": 121,
       "type": "timeseries",
-      "title": "Postgres",
-      "description": "Server-side",
+      "title": "Postgres server activity",
+      "description": "Server-side view. Teleport latency rising while this stays flat points at the pool or network, not the database.",
       "datasource": {
         "type": "prometheus",
-        "uid": "$${datasource}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 35
+        "y": 65
       },
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum(pg_stat_database_numbackends)",
@@ -1451,33 +2572,33 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum(rate(pg_stat_database_xact_commit[5m]))",
-          "legendFormat": "commits/s",
+          "legendFormat": "commits",
           "range": true,
           "refId": "B"
         },
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum(rate(pg_stat_database_xact_rollback[5m]))",
-          "legendFormat": "rollbacks/s",
+          "legendFormat": "rollbacks",
           "range": true,
           "refId": "C"
         },
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum(rate(pg_stat_database_deadlocks[5m]))",
-          "legendFormat": "deadlocks/s",
+          "legendFormat": "deadlocks",
           "range": true,
           "refId": "D"
         }
@@ -1499,16 +2620,48 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none",
+          "unit": "short",
           "custom": {
             "drawStyle": "line",
             "lineWidth": 2,
             "fillOpacity": 8,
             "showPoints": "never",
-            "spanNulls": true
+            "spanNulls": true,
+            "axisLabel": "connections"
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "commits|rollbacks|deadlocks"
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "unit",
+                "value": "reqps"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    6
+                  ]
+                }
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "ops/sec"
+              }
+            ]
+          }
+        ]
       }
     },
     {
@@ -1520,69 +2673,47 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 42
+        "y": 72
       },
       "panels": []
     },
     {
-      "id": 123,
+      "id": 810,
       "type": "timeseries",
-      "title": "Upload health",
-      "description": "Whether session recordings upload successfully",
+      "title": "Uploads awaiting completion",
+      "description": "Counts, not rates. What matters is whether this returns to zero after sessions end.",
       "datasource": {
         "type": "prometheus",
-        "uid": "$${datasource}"
+        "uid": "${datasource}"
       },
       "gridPos": {
-        "h": 8,
-        "w": 8,
+        "h": 7,
+        "w": 12,
         "x": 0,
-        "y": 43
+        "y": 73
       },
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum(teleport_incomplete_session_uploads_total) or vector(0)",
-          "legendFormat": "incomplete uploads",
+          "legendFormat": "pending uploads",
           "range": true,
           "refId": "A"
         },
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum(teleport_recording_metadata_sessions_processing_total) or vector(0)",
-          "legendFormat": "processing",
+          "legendFormat": "being processed",
           "range": true,
           "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "$${datasource}"
-          },
-          "editorMode": "code",
-          "expr": "sum(rate(audit_failed_emit_events[5m])) or vector(0)",
-          "legendFormat": "failed emits/s",
-          "range": true,
-          "refId": "C"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "$${datasource}"
-          },
-          "editorMode": "code",
-          "expr": "sum(rate(teleport_audit_emit_events[5m])) or vector(0)",
-          "legendFormat": "emits/s",
-          "range": true,
-          "refId": "D"
         }
       ],
       "options": {
@@ -1602,53 +2733,54 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none",
+          "unit": "short",
           "custom": {
             "drawStyle": "line",
             "lineWidth": 2,
             "fillOpacity": 8,
             "showPoints": "never",
-            "spanNulls": true
+            "spanNulls": true,
+            "axisLabel": "recordings"
           }
         },
         "overrides": []
       }
     },
     {
-      "id": 124,
+      "id": 811,
       "type": "timeseries",
-      "title": "Teleport S3 calls",
-      "description": "Tracked per operation",
+      "title": "Audit event emission",
+      "description": "Failures here with S3 requests flat means Teleport never reached S3; failures alongside S3 errors means S3 rejected the write.",
       "datasource": {
         "type": "prometheus",
-        "uid": "$${datasource}"
+        "uid": "${datasource}"
       },
       "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 8,
-        "y": 43
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 73
       },
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (operation) (rate(s3_requests_seconds_count[5m]))",
-          "legendFormat": "{{operation}}",
+          "expr": "sum(rate(teleport_audit_emit_events[5m])) or vector(0)",
+          "legendFormat": "emitted",
           "range": true,
           "refId": "A"
         },
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.99, sum by (le, operation) (rate(s3_requests_seconds_bucket[5m])))",
-          "legendFormat": "p99 {{operation}}",
+          "expr": "sum(rate(audit_failed_emit_events[5m])) or vector(0)",
+          "legendFormat": "FAILED",
           "range": true,
           "refId": "B"
         }
@@ -1670,32 +2802,160 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none",
+          "unit": "reqps",
           "custom": {
             "drawStyle": "line",
             "lineWidth": 2,
             "fillOpacity": 8,
             "showPoints": "never",
-            "spanNulls": true
+            "spanNulls": true,
+            "axisLabel": ""
           }
         },
         "overrides": []
       }
     },
     {
-      "id": 125,
+      "id": 812,
       "type": "timeseries",
-      "title": "S3",
+      "title": "S3 calls by operation",
+      "description": "Filtered to recording operations. Credential and health calls are excluded - widen the regex if you need them.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 80
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum by (operation) (rate(s3_requests_seconds_count{operation=~\"PutObject|GetObject|CreateMultipartUpload|UploadPart|CompleteMultipartUpload|AbortMultipartUpload|ListMultipartUploads\"}[5m]))",
+          "legendFormat": "{{operation}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisLabel": ""
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 813,
+      "type": "timeseries",
+      "title": "S3 call latency",
+      "description": "Aggregated across operations. Add a label filter to isolate a slow one rather than drawing all of them.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 80
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(s3_requests_seconds_bucket[5m])))",
+          "legendFormat": "p99",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(s3_requests_seconds_bucket[5m])))",
+          "legendFormat": "p50",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisLabel": ""
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 814,
+      "type": "timeseries",
+      "title": "S3 requests (CloudWatch)",
       "datasource": {
         "type": "cloudwatch",
         "uid": "cloudwatch"
       },
-      "description": "Via CloudWatch, independent of Teleport, exhibits ~15min lag",
+      "description": "S3's own view. Teleport-side errors with no S3 requests means the call was never made. Lags ~15 minutes.",
       "gridPos": {
-        "h": 8,
+        "h": 7,
         "w": 8,
         "x": 16,
-        "y": 43
+        "y": 80
       },
       "targets": [
         {
@@ -1778,8 +3038,10 @@
             "lineWidth": 2,
             "fillOpacity": 8,
             "showPoints": "never",
-            "spanNulls": true
-          }
+            "spanNulls": true,
+            "axisLabel": "requests"
+          },
+          "unit": "short"
         },
         "overrides": []
       }
@@ -1793,7 +3055,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 51
+        "y": 87
       },
       "panels": []
     },
@@ -1801,22 +3063,22 @@
       "id": 127,
       "type": "timeseries",
       "title": "Reconcile failures and suspensions",
-      "description": "Named failures and counts expressing cluster divergence from Git",
+      "description": "Named failures. A suspended resource is silent, intentional, and easy to forget mid-debug.",
       "datasource": {
         "type": "prometheus",
-        "uid": "$${datasource}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 52
+        "y": 88
       },
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum(gotk_resource_info{ready=\"False\"}) or vector(0)",
@@ -1827,7 +3089,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "gotk_resource_info{ready=\"False\"} == 1",
@@ -1838,7 +3100,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "gotk_resource_info{suspended=\"true\"} == 1",
@@ -1864,13 +3126,14 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none",
+          "unit": "short",
           "custom": {
             "drawStyle": "line",
             "lineWidth": 2,
             "fillOpacity": 8,
             "showPoints": "never",
-            "spanNulls": true
+            "spanNulls": true,
+            "axisLabel": "resources"
           }
         },
         "overrides": [
@@ -1914,22 +3177,22 @@
       "id": 128,
       "type": "timeseries",
       "title": "Reconcile duration p99 by kind",
-      "description": "Rising duration often precedes timeouts",
+      "description": "Rising duration precedes timeouts. A Kustomization with wait:true taking minutes is usually waiting on something that will never be ready.",
       "datasource": {
         "type": "prometheus",
-        "uid": "$${datasource}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 52
+        "y": 88
       },
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.99, sum by (le, kind) (rate(gotk_reconcile_duration_seconds_bucket[5m])))",
@@ -1961,7 +3224,8 @@
             "lineWidth": 2,
             "fillOpacity": 8,
             "showPoints": "never",
-            "spanNulls": true
+            "spanNulls": true,
+            "axisLabel": ""
           }
         },
         "overrides": []
@@ -1976,45 +3240,45 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 59
+        "y": 95
       },
       "panels": []
     },
     {
       "id": 130,
       "type": "timeseries",
-      "title": "Public proxy endpoint latency and result",
-      "description": "Failures point to LB, DNS or security group issues",
+      "title": "Public endpoint",
+      "description": "End-to-end to the public proxy URL. Healthy pods plus a failing probe points at the LB, DNS or security groups.",
       "datasource": {
         "type": "prometheus",
-        "uid": "$${datasource}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 60
+        "y": 96
       },
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "probe_duration_seconds",
-          "legendFormat": "total",
+          "legendFormat": "latency",
           "range": true,
           "refId": "A"
         },
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "probe_success",
-          "legendFormat": "success (1/0)",
+          "legendFormat": "reachable (1 = yes)",
           "range": true,
           "refId": "B"
         }
@@ -2042,43 +3306,75 @@
             "lineWidth": 2,
             "fillOpacity": 8,
             "showPoints": "never",
-            "spanNulls": true
+            "spanNulls": true,
+            "axisLabel": ""
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "reachable (1 = yes)"
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    8,
+                    6
+                  ]
+                }
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "reachable"
+              }
+            ]
+          }
+        ]
       }
     },
     {
       "id": 131,
       "type": "timeseries",
-      "title": "Certificate expiry time",
-      "description": "Gaps means cert-manager renewed but the serving cert was never reloaded",
+      "title": "Time to cert expiry",
+      "description": "'Served by public endpoint' is the leaf cert the proxy actually presents. A gap from cert-manager means it renewed but was never reloaded.",
       "datasource": {
         "type": "prometheus",
-        "uid": "$${datasource}"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 60
+        "y": 96
       },
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "(probe_ssl_earliest_cert_expiry - time()) / 86400",
-          "legendFormat": "as clients see it",
+          "legendFormat": "served by public endpoint",
           "range": true,
           "refId": "A"
         },
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "(certmanager_certificate_expiration_timestamp_seconds - time()) / 86400",
@@ -2110,8 +3406,832 @@
             "lineWidth": 2,
             "fillOpacity": 8,
             "showPoints": "never",
-            "spanNulls": true
+            "spanNulls": true,
+            "axisLabel": ""
           }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 900,
+      "type": "row",
+      "title": "User Adoption and Resource Coverage",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 104
+      },
+      "panels": []
+    },
+    {
+      "id": 960,
+      "type": "timeseries",
+      "title": "Distinct users",
+      "description": "Different people logging in, per bucket - active users, not users who have ever existed.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "teleport-audit"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 105
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "teleport-audit"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroupAlias(event_time, $__interval),\n  count(DISTINCT event_data->>'user') AS \"distinct users\"\nFROM events\nWHERE $__timeFilter(event_time)\n  AND event_type = 'user.login'\n  AND event_data->>'user' IS NOT NULL\nGROUP BY 1\nORDER BY 1",
+          "refId": "A",
+          "editorMode": "code"
+        }
+      ],
+      "interval": "1h",
+      "timeFrom": "30d",
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "max"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "lineWidth": 1,
+            "fillOpacity": 60,
+            "showPoints": "never",
+            "spanNulls": false,
+            "axisLabel": "users",
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 961,
+      "type": "timeseries",
+      "title": "Logins by user",
+      "description": "Stacked per person: total height is volume, each band is one user. 6 of 102 login events carry no user and are excluded.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "teleport-audit"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 105
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "teleport-audit"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroupAlias(event_time, $__interval),\n  event_data->>'user' AS metric,\n  count(*) AS value\nFROM events\nWHERE $__timeFilter(event_time)\n  AND event_type = 'user.login'\n  AND event_data->>'user' IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1",
+          "refId": "A",
+          "editorMode": "code"
+        }
+      ],
+      "interval": "1h",
+      "timeFrom": "30d",
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "sum"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "lineWidth": 1,
+            "fillOpacity": 60,
+            "showPoints": "never",
+            "spanNulls": false,
+            "axisLabel": "logins",
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 962,
+      "type": "timeseries",
+      "title": "Login outcome and method",
+      "description": "Successes by auth method, failures separate. 28 of 102 logins carry an error field.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "teleport-audit"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 105
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "teleport-audit"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroupAlias(event_time, $__interval),\n  CASE WHEN event_data->>'success' = 'true'\n       THEN coalesce(event_data->>'method', 'unknown')\n       ELSE 'FAILED (' || coalesce(event_data->>'method', 'unknown') || ')'\n  END AS metric,\n  count(*) AS value\nFROM events\nWHERE $__timeFilter(event_time)\n  AND event_type = 'user.login'\nGROUP BY 1, 2\nORDER BY 1",
+          "refId": "A",
+          "editorMode": "code"
+        }
+      ],
+      "interval": "1h",
+      "timeFrom": "30d",
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "sum"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "lineWidth": 1,
+            "fillOpacity": 60,
+            "showPoints": "never",
+            "spanNulls": false,
+            "axisLabel": "logins",
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 901,
+      "type": "timeseries",
+      "title": "Instances joining, by role",
+      "description": "Agents registering, with failures called out. 42 of 220 join attempts carry an error - invisible elsewhere on this dashboard.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "teleport-audit"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 113
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "teleport-audit"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroupAlias(event_time, $__interval),\n  CASE WHEN event_data->>'success' = 'true'\n       THEN coalesce(event_data->>'role', 'unknown')\n       ELSE 'FAILED (' || coalesce(event_data->>'role', 'unknown') || ')'\n  END AS metric,\n  count(*) AS value\nFROM events\nWHERE $__timeFilter(event_time)\n  AND event_type = 'instance.join'\nGROUP BY 1, 2\nORDER BY 1",
+          "refId": "A",
+          "editorMode": "code"
+        }
+      ],
+      "interval": "1h",
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "sum"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "lineWidth": 1,
+            "fillOpacity": 60,
+            "showPoints": "never",
+            "spanNulls": false,
+            "axisLabel": "events",
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "timeFrom": "30d"
+    },
+    {
+      "id": 902,
+      "type": "timeseries",
+      "title": "Session and app activity",
+      "description": "Logins far exceeding sessions means people authenticate without connecting to anything.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "teleport-audit"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 113
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "teleport-audit"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroupAlias(event_time, $__interval),\n  event_type AS metric,\n  count(*) AS value\nFROM events\nWHERE $__timeFilter(event_time)\n  AND event_type IN ('session.start', 'app.session.start', 'user.login', 'session.upload')\nGROUP BY 1, 2\nORDER BY 1",
+          "refId": "A",
+          "editorMode": "code"
+        }
+      ],
+      "interval": "1h",
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "sum"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "lineWidth": 1,
+            "fillOpacity": 60,
+            "showPoints": "never",
+            "spanNulls": false,
+            "axisLabel": "events",
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "timeFrom": "30d"
+    },
+    {
+      "id": 903,
+      "type": "timeseries",
+      "title": "Access request workflow",
+      "description": "Expiries outnumbering reviews means requests go unanswered - an adoption blocker no infrastructure metric shows.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "teleport-audit"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 121
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "teleport-audit"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroupAlias(event_time, $__interval),\n  event_type AS metric,\n  count(*) AS value\nFROM events\nWHERE $__timeFilter(event_time)\n  AND event_type LIKE 'access_request.%'\nGROUP BY 1, 2\nORDER BY 1",
+          "refId": "A",
+          "editorMode": "code"
+        }
+      ],
+      "interval": "1h",
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "sum"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "lineWidth": 1,
+            "fillOpacity": 60,
+            "showPoints": "never",
+            "spanNulls": false,
+            "axisLabel": "events",
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "timeFrom": "30d"
+    },
+    {
+      "id": 904,
+      "type": "timeseries",
+      "title": "Security posture events",
+      "description": "MFA challenges issued versus validated. Challenges without validations means people are being prompted and abandoning.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "teleport-audit"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 121
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "teleport-audit"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroupAlias(event_time, $__interval),\n  event_type AS metric,\n  count(*) AS value\nFROM events\nWHERE $__timeFilter(event_time)\n  AND event_type IN ('mfa_auth_challenge.create', 'mfa_auth_challenge.validate',\n                     'device.authenticate', 'saml.created', 'role.deleted', 'role.updated')\nGROUP BY 1, 2\nORDER BY 1",
+          "refId": "A",
+          "editorMode": "code"
+        }
+      ],
+      "interval": "1h",
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "sum"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "lineWidth": 1,
+            "fillOpacity": 60,
+            "showPoints": "never",
+            "spanNulls": false,
+            "axisLabel": "events",
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "timeFrom": "30d"
+    },
+    {
+      "id": 1000,
+      "type": "timeseries",
+      "title": "SSH sessions by target host",
+      "description": "What people actually connect to, as opposed to what exists.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "teleport-audit"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 128
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "teleport-audit"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroupAlias(event_time, $__interval),\n  coalesce(event_data->>'server_hostname', 'unknown') AS metric,\n  count(*) AS value\nFROM events\nWHERE $__timeFilter(event_time)\n  AND event_type = 'session.start'\nGROUP BY 1, 2\nORDER BY 1",
+          "refId": "A",
+          "editorMode": "code"
+        }
+      ],
+      "interval": "1h",
+      "timeFrom": "30d",
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "sum"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "lineWidth": 1,
+            "fillOpacity": 60,
+            "showPoints": "never",
+            "spanNulls": false,
+            "axisLabel": "events",
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 1001,
+      "type": "timeseries",
+      "title": "App sessions by application",
+      "description": "Almost entirely 'grafana' for now - every visit to this dashboard writes one of these events.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "teleport-audit"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 128
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "teleport-audit"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroupAlias(event_time, $__interval),\n  coalesce(event_data->>'app_name', 'unknown') AS metric,\n  count(*) AS value\nFROM events\nWHERE $__timeFilter(event_time)\n  AND event_type = 'app.session.start'\nGROUP BY 1, 2\nORDER BY 1",
+          "refId": "A",
+          "editorMode": "code"
+        }
+      ],
+      "interval": "1h",
+      "timeFrom": "30d",
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "sum"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "lineWidth": 1,
+            "fillOpacity": 60,
+            "showPoints": "never",
+            "spanNulls": false,
+            "axisLabel": "events",
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 1002,
+      "type": "timeseries",
+      "title": "Access requests by role requested",
+      "description": "Roles unnested, so a two-role request counts against both. Shows where the RBAC model and actual need diverge.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "teleport-audit"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 128
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "teleport-audit"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroupAlias(event_time, $__interval),\n  r.role AS metric,\n  count(*) AS value\nFROM events e\nCROSS JOIN LATERAL jsonb_array_elements_text(e.event_data::jsonb -> 'roles') AS r(role)\nWHERE $__timeFilter(e.event_time)\n  AND e.event_type = 'access_request.create'\nGROUP BY 1, 2\nORDER BY 1",
+          "refId": "A",
+          "editorMode": "code"
+        }
+      ],
+      "interval": "1h",
+      "timeFrom": "30d",
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "sum"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "lineWidth": 1,
+            "fillOpacity": 60,
+            "showPoints": "never",
+            "spanNulls": false,
+            "axisLabel": "events",
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 1100,
+      "type": "timeseries",
+      "title": "Users seen, cumulative",
+      "description": "Running count of distinct people who have ever logged in. Only ever rises - departures are not subtracted.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "teleport-audit"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 136
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "teleport-audit"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  first_seen AS time,\n  count(*) OVER (ORDER BY first_seen) AS \"users seen\"\nFROM (\n  SELECT min(event_time) AS first_seen, event_data->>'user' AS u\n  FROM events\n  WHERE event_type = 'user.login' AND event_data->>'user' IS NOT NULL\n  GROUP BY 2\n) f\nORDER BY first_seen",
+          "refId": "A",
+          "editorMode": "code"
+        }
+      ],
+      "timeFrom": "90d",
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisLabel": "users",
+            "axisSoftMin": 0
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 1101,
+      "type": "timeseries",
+      "title": "Roles defined, cumulative",
+      "description": "Distinct role names ever created. Deduplicated on name, so the operator's 1043 repeat role.created events count once each. VERIFY: assumes role.created carries a 'name' field.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "teleport-audit"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 136
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "teleport-audit"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  first_seen AS time,\n  count(*) OVER (ORDER BY first_seen) AS \"roles\"\nFROM (\n  SELECT min(event_time) AS first_seen, event_data->>'name' AS r\n  FROM events\n  WHERE event_type = 'role.created' AND event_data->>'name' IS NOT NULL\n  GROUP BY 2\n) f\nORDER BY first_seen",
+          "refId": "A",
+          "editorMode": "code"
+        }
+      ],
+      "timeFrom": "90d",
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisLabel": "roles",
+            "axisSoftMin": 0
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 1102,
+      "type": "timeseries",
+      "title": "Joined instances by role, cumulative",
+      "description": "An 'instance' is a Teleport PROCESS joining - proxy, auth, agent or node - not a protected resource. Grouped on the singular 'role' field, present in all 220 events, rather than the 'roles' array which only 40 carry. Deduplicated on node_name because host_id is regenerated on every process start. Still approximate: agent pod names change on restart. For true inventory use the Teleport API, not the audit log.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "teleport-audit"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 136
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "teleport-audit"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  f.first_seen AS time,\n  f.kind AS metric,\n  count(*) OVER (PARTITION BY f.kind ORDER BY f.first_seen) AS value\nFROM (\n  SELECT min(event_time) AS first_seen,\n         event_data->>'node_name' AS node_name,\n         coalesce(event_data->>'role', 'unknown') AS kind\n  FROM events\n  WHERE event_type = 'instance.join'\n    AND event_data->>'success' = 'true'\n    AND event_data->>'node_name' IS NOT NULL\n  GROUP BY 2, 3\n) f\nORDER BY f.first_seen",
+          "refId": "A",
+          "editorMode": "code"
+        }
+      ],
+      "timeFrom": "90d",
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisLabel": "instances",
+            "axisSoftMin": 0
+          },
+          "decimals": 0
         },
         "overrides": []
       }
