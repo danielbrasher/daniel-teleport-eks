@@ -208,9 +208,9 @@ spec:
           type: postgres
           uid: teleport-audit
           url: teleport-postgres.teleport-databases.svc.cluster.local:5432
-          database: teleport_audit
           user: grafana_audit
           jsonData:
+            database: teleport_audit
             sslmode: verify-full
             tlsAuth: true
             tlsAuthWithCACert: true
