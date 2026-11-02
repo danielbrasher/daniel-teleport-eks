@@ -135,6 +135,7 @@ spec:
         # single replica on a ReadWriteOnce PVC deadlocks on a rolling update bc new pod can't mount the volume until the old pod releases it, and the old pod won't terminate until the new pod is Ready
         # type: Recreate accepts a few seconds of downtime instead and avoids the deadlock
         type: Recreate
+        rollingUpdate: null # explicitly removing from the merged map, TODO: update note here once approach validated
       serviceAccount:
         create: true
         name: grafana
