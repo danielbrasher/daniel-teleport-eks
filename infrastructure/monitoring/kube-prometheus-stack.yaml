@@ -11,7 +11,7 @@ spec:
   chart:
     spec:
       chart: kube-prometheus-stack
-      version: "92.x"
+      version: "92.16.2" # pinning this way to make upgrades a deliberate commit and avoid unannounced surprises
       sourceRef:
         kind: HelmRepository
         name: prometheus-community
@@ -131,6 +131,10 @@ spec:
                       suspended: [spec, suspend]
 
     grafana:
+      deploymentStrategy:
+        # single replica on a ReadWriteOnce PVC deadlocks on a rolling update bc new pod can't mount the volume until the old pod releases it, and the old pod won't terminate until the new pod is Ready
+        # type: Recreate accepts a few seconds of downtime instead and avoids the deadlock
+        type: Recreate
       serviceAccount:
         create: true
         name: grafana
