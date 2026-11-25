@@ -34,6 +34,11 @@ auth:
           enabled: true
           first_uid: 90000
           last_uid: 95000
+      session_recording_config:
+        # Teleport 19 defaults to writing audit events to disk before successful delivery to audit storage backend
+        # so enabling to encrypt both session recordings and audit events per https://goteleport.com/docs/changelog/#1900-112326
+        encryption:
+          enabled: yes
 
 extraVolumes:
 - name: backend-tls
